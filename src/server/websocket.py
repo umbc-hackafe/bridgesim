@@ -710,7 +710,6 @@ class WebSocketServer(object):
         """
         ready = select.select([sock], [], [], 3)[0]
 
-        
         if not ready:
             raise self.EClose("ignoring socket not ready")
         # Peek, but do not read the data so that we have a opportunity
@@ -905,6 +904,7 @@ class WebSocketServer(object):
                                         % address[0])
                                 break
                         elif multiprocessing:
+                            # FIXME use thread instead?
                             self.vmsg('%s: new handler Process' % address[0])
                             p = multiprocessing.Process(
                                     target=self.top_new_client,

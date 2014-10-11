@@ -124,12 +124,10 @@ window.client = {
 }
 
 $(function() {
-    var wsUri = "ws://echo.websocket.org/";
-
     window.client.init(new SocketWrapper(new WebSocket("ws://" + location.hostname + ":" + (parseInt(location.port) + 1), ['base64', 'binary'])));
 
     window.client.socket.addOnOpen(function(evt) { console.log("WebSocket is open!"); registerWithServer();});
-    //window.client.socket.addOnMessage(function(data) { console.log(data); });
+    window.client.socket.addOnMessage(function(data) { console.log(data); });
 });
 
 function registerWithServer() {

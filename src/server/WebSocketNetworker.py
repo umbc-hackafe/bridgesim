@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+H#!/usr/bin/env python
 
 '''
 A WebSocket server that echos back whatever it receives from the client.
@@ -19,6 +19,9 @@ class WebSocketNetworker(WebSocketRequestHandler):
     WebSockets server that echos back whatever is received from the
     client.  """
     buffer_size = 8096
+
+    def __init__(self, req, addr, server):
+        WebSocketRequestHandler.__init__(self, req, addr, server):
 
     def new_websocket_client(self):
         """
