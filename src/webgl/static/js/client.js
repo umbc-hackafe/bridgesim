@@ -14,10 +14,11 @@ function SocketWrapper(socket) {
     }
 
     socket.onmessage = function(evt) {
-	console.log("Receiving: ", evt.data);
+	var jsonData = JSON.parse(evt.data);
+	console.log("Receiving: ", jsonData);
 	for (var l in wrap.onMessages.slice(0)) {
 	    // Might need to do atob() here?
-	    wrap.onMessages[l](JSON.parse(evt.data));
+	    wrap.onMessages[l](jsonData);
 	}
     }
 
