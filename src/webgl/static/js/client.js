@@ -4,9 +4,11 @@ function SocketWrapper(socket) {
     this.onMessages = [];
     this.onErrors = [];
     this.onCloses = [];
+    this.open = false;
     var wrap = this; // wat.
 
     socket.onopen = function(evt) {
+	wrap.open = true;
 	// APPARENTLY, this is now socket.this
 	for (var l in wrap.onOpens.slice(0)) {
 	    wrap.onOpens[l](evt);
@@ -52,9 +54,17 @@ SocketWrapper.prototype.addOnClose = function(cb) {
 }
 
 SocketWrapper.prototype.send = function(data) {
-    // FIXME maybe need btoa here?
-    console.log("Sending: ", data);
-    this.socket.send(JSON.stringify(data));
+    if (this.open) {
+	// FIXME maybe need btoa here?
+	console.log("Sending: ", data);
+	this.socket.send(JSON.stringify(data));
+    } else {
+	console.log("Socket not open. Queueing...");
+	var theese = this;
+	var func = function(){theese.socket.send(JSON.stringify(data));};
+	// TODO auto-delete after calling?
+	this.addOnOpen(func);
+    }
 }
 
 SocketWrapper.prototype.close = function() {

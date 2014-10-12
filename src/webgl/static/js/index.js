@@ -100,17 +100,17 @@ function registerWithServer() {
 		console.log("You are " + res.seq);
 	    }
 	})});
-    
-    window.client.call("Ship__name", ["Ship", 0, 1],
+
+}
+
+$(function() {
+    window.client.init(location.hostname, 9000, "/client");
+    client.call("Ship__name", ["Ship", 0, 1],
 		       {
 			   callback: function(res) {
 			       $("#result-text").val(res.result);
 			   }
 		       });
-}
-
-$(function() {
-    window.client.init(location.hostname, 9000, "/client");
 
     window.client.socket.addOnOpen(function(evt) { console.log("WebSocket is open!"); registerWithServer();});
     //window.client.socket.addOnMessage(function(data) { console.log(data); });
