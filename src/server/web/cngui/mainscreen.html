@@ -24,7 +24,7 @@ body{
 <script src="mainscreen.js" > </script>
 <script src="CNWebGL.js" > </script>
 <script src="CNWebGLUtil.js" > </script>
-<script src="websocket.js"></script>
+<script src="/js/client.js"></script>
 <script src="util.js"></script>
 
 <script id="vert" type="x-shader/x-vertex">
@@ -105,8 +105,11 @@ body{
 		cwg.trace = function( str ) {
 			console.log( str );
 
-		wsInitString = '{"args": ["entity", 10], "kwargs": {}, "op": "ClientUpdater__requestUpdates", "seq": 1 }';
-		StartWebSocket();
+		// Something is calling this twice, within cwg.trace...?????
+		if (!('client' in window))
+		window.client = new Client(location.hostname, 9000, "/client");
+		window.onbeforeunload = function() {client.quit();};
+		client.call("Ship__name", ["Ship", 0, 1], {callback: function(data){console.log("The ship's name is", data.result);}});
 
 		AttachMouseWheel( MouseWheelEvent, document.getElementById("example") ); 
 		setupPoinerMotion( PointerMotionFn );
