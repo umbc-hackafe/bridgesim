@@ -1,5 +1,6 @@
 function SocketWrapper(socket) {
     this.socket = socket;
+    this.queuedData = [];
     this.onOpens = [];
     this.onMessages = [];
     this.onErrors = [];
@@ -13,14 +14,23 @@ function SocketWrapper(socket) {
 	for (var l in wrap.onOpens.slice(0)) {
 	    wrap.onOpens[l](evt);
 	}
+
+	for (var d in wrap.queuedData) {
+	    wrap.send(wrap.queuedData[d]);
+	}
+	wrap.queuedData = [];
     }
 
     socket.onmessage = function(evt) {
 	var jsonData = JSON.parse(evt.data);
 	console.log("Receiving: ", jsonData);
-	for (var l in wrap.onMessages.slice(0)) {
-	    // Might need to do atob() here?
-	    wrap.onMessages[l](jsonData);
+	if (jsonData == null) {
+	    console.log("Data is null... that's weird.");
+	} else {
+	    for (var l in wrap.onMessages.slice(0)) {
+		// Might need to do atob() here?
+		wrap.onMessages[l](jsonData);
+	    }
 	}
     }
 
@@ -59,11 +69,9 @@ SocketWrapper.prototype.send = function(data) {
 	console.log("Sending: ", data);
 	this.socket.send(JSON.stringify(data));
     } else {
-	console.log("Socket not open. Queueing...");
-	var theese = this;
-	var func = function(){theese.socket.send(JSON.stringify(data));};
+	console.log("Socket not open. Queueing seq#" + data.seq);
 	// TODO auto-delete after calling?
-	this.addOnOpen(func);
+	this.queuedData.push(data);
     }
 }
 
@@ -120,46 +128,49 @@ RemoteFunction.prototype.call = function(context, kwargs) {
     this.socket.send(data);
     // All functions will have a 5 second timeout I guess
     if (this.callback) {
-	this.timer = setTimeout(function() {theese.callback(null);}, 5000);
+	this.timer = setTimeout(function() {console.log("Call (seq#" + theese.seq + ") timed out.");}, 5000);
     } else {
 	console.log("this.callback is not anything:");
 	console.log(this.callback);
     }
 }
 
-window.client = {
-    id: null, // This will be updated when connection is successful
-    seq: 0,
-    socket: null, // This needs to be set before we can initialize
-    init: function(host, port, path) {
-	if (this.socket) this.socket.close();
-	this.socket = new SocketWrapper(new WebSocket("ws://" + host + ":" + port + (path[0] == "/" ? path : "/" + path)));
-	this.socket.addOnOpen(function(evt) {
-	    console.log("Socket opened. Now calling whoami...");
-	    window.client.call("SharedClientDataStore__set", ["GlobalContext"], {callback: function(res) {
-		this.id = res;
-	    }, kwargs: {"key": "testVal", "value": "success"} });
-	});
-    },
-    call: function(name, context, extras) {
-	// Extras should be an object, e.g.:
-	// client.call("SharedClientDataStore__get", ["SharedClientDataStore", 0],
-	//           { args: ["test"],
-	//             kwargs: {default: "unknown"},
-	//             callback: function(data) {alert(data.result);}
-	//           }
-	// );
-	var args = [], kwargs = {}, callback;
-	console.log("Extras", extras);
-	if (extras && 'args' in extras) args = extras.args;
-	if (extras && 'kwargs' in extras) kwargs = extras.kwargs;
-	if (extras && 'callback' in extras) {
-	    callback = extras.callback;
-	    console.log("callback", callback);
-	}
-	var tmpSeq = ++this.seq;
-	var rf = new RemoteFunction(this.socket, tmpSeq, name, callback, null);
-	var newArgs = [context, kwargs].concat(args);
-	rf.call.apply(rf, newArgs);
+function Client(host, port, path) {
+    this.id = null; // This will be updated when connection is successful
+    this.socket = null;
+    this.seq = 0;
+    this.init(host, port, path);
+}
+
+Client.prototype.init = function(host, port, path) {
+    if (this.socket) this.socket.close();
+    this.socket = new SocketWrapper(new WebSocket("ws://" + host + ":" + port + (path[0] == "/" ? path : "/" + path)));
+};
+
+Client.prototype.call = function(name, context, extras) {
+    // Extras should be an object, e.g.:
+    // client.call("SharedClientDataStore__get", ["SharedClientDataStore", 0],
+    //           { args: ["test"],
+    //             kwargs: {default: "unknown"},
+    //             callback: function(data) {alert(data.result);}
+    //           }
+    // );
+    var args = [], kwargs = {}, callback;
+    if (extras && 'args' in extras) args = extras.args;
+    if (extras && 'kwargs' in extras) kwargs = extras.kwargs;
+    if (extras && 'callback' in extras) {
+	callback = extras.callback;
     }
+    this.seq += 1;
+    var tmpSeq = this.seq;
+    console.log("tmpSeq", tmpSeq);
+    console.log(this.seq);
+    var rf = new RemoteFunction(this.socket, tmpSeq, name, callback, null);
+    var newArgs = [context, kwargs].concat(args);
+    rf.call.apply(rf, newArgs);
+};
+
+Client.prototype.quit = function() {
+    console.log("Quitting");
+    this.socket.close();
 }
