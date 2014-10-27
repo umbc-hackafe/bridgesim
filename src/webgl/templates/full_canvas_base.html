@@ -2,7 +2,12 @@
 {% block header_includes %}
   {% if config.DEBUG %}
     <script src="{{ url_for("static", filename="js/three/three.js") }}"></script>
+    <script src="{{ url_for("static", filename="js/three/Group.js") }}"></script>
+    <script src="{{ url_for("static", filename="js/three/MTLLoader.js") }}"></script>
     <script src="{{ url_for("static", filename="js/three/OBJLoader.js") }}"></script>
+    <script src="{{ url_for("static", filename="js/three/OBJMTLLoader.js") }}"></script>
+    <script src="{{ url_for("static", filename="js/three/CompressedTextureLoader.js") }}"></script>
+    <script src="{{ url_for("static", filename="js/three/DDSLoader.js") }}"></script>
     <link rel="stylesheet" href="{{ url_for("static", filename="css/common/fullwindow_canvas.css") }}" />
   {% else %}
     <script src="{{ url_for("static", filename="js/three/three.min.js") }}"></script>
