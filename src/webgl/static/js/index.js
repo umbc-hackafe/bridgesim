@@ -109,12 +109,6 @@ function registerWithServer() {
 
 $(function() {
     window.client.init(location.hostname, 9000, "/client");
-    window.client.call("Ship__name", ["Ship", 0, 1],
-		       {
-			   callback: function(res) {
-			       $("#result-text").val(res.result);
-			   }
-		       });
 
     window.client.socket.addOnOpen(function(evt) { console.log("WebSocket is open!"); registerWithServer();});
     //window.client.socket.addOnMessage(function(data) { console.log(data); });
