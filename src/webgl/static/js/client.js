@@ -96,7 +96,8 @@ RemoteFunction.prototype.listener = function(data) {
 	    if (data.seq == this.seq) {
 		clearTimeout(this.timer);
 		this.complete = true;
-		this.callback(data);
+		if (this.callback)
+		    this.callback(data);
 
 		// if we leave this around we get exponential calls, oops
 		var ourIndex = this.socket.onMessages.indexOf(this.boundMethod);

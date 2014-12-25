@@ -1,3 +1,4 @@
+import sys
 from Client import Client, ClientUpdater
 from SocketNetworker import SocketNetworker
 import threading
@@ -5,6 +6,7 @@ import socket
 import physics
 import os
 import json
+import traceback
 
 import cherrypy
 from ws4py.server.cherrypyserver import WebSocketPlugin, WebSocketTool
@@ -31,6 +33,8 @@ class VectorEncoder(json.JSONEncoder):
     def default(self, obj):
         if isinstance(obj, physics.Vector):
             return list(obj.dimensions)
+        if hasattr(obj, 'Context'):
+            return list(obj.Context(instance=obj))
         return json.JSONEncoder.default(self, obj)
 
 class ClientHandler(WebSocket):
@@ -55,9 +59,11 @@ class ClientHandler(WebSocket):
         try:
             encodeddata = json.dumps(data, cls=VectorEncoder, separators=(',',':')).encode('UTF-8')
             super().send(encodeddata)
-        except:
+        except Exception as e:
+            print("Send Failed:")
+            traceback.print_exc()
             self.failed += 1
-            print("Send Failed")
+            #print("Send Failed")
             if self.failed > 10:
                 raise OSError("Error updating client "+str(self.client.id)+", destroying")
 
@@ -65,8 +71,10 @@ class ClientHandler(WebSocket):
         try:
             print(">>>", message.data)
             if not(self.idsent):
+                print("Sending ID for first message")
                 self.idsent = True
-                self.send(json.dumps({"id": self.client.id}, cls=VectorEncoder, separators=(',',':')).encode('UTF-8'))
+                self.send({"id": self.client.id})
+                print("Done")
             print(self.listeners)
             for i in self.listeners:
                 print("Handling Message")
@@ -75,8 +83,11 @@ class ClientHandler(WebSocket):
                     print("Adding context")
                     msg['context'] = [msg['op'].split("__")[0], self.client.id]
                 i(msg)
-        except:
-            print("Receive Failed")
+        except Exception as e:
+            raise e
+            print("Receive Failed:")
+            traceback.print_exc()
+            #print("Receive Failed")
  
 class NetworkServer:
     def __init__(self, config, universe):
