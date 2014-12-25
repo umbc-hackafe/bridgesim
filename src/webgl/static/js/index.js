@@ -108,9 +108,11 @@ function registerWithServer() {
 }
 
 $(function() {
-    window.client.init(location.hostname, 9000, "/client");
+    window.client = new Client(location.hostname, 9000, "/client");
+    //window.client.init(location.hostname, 9000, "/client");
 
     window.client.socket.addOnOpen(function(evt) { console.log("WebSocket is open!"); registerWithServer();});
+    window.client.socket.addOnClose(function(evt) { console.log("Socket CLOSED!"); });
     //window.client.socket.addOnMessage(function(data) { console.log(data); });
 
     $("#test-btn").click(function() {
