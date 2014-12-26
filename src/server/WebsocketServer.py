@@ -41,7 +41,6 @@ class ClientHandler(WebSocket):
     clients = {}
     def __init__(self, *args, **kwargs):
         self.failed = 0
-        self.idsent = False
         super().__init__(*args, **kwargs)
         self.listeners = []
         self.listening = False
@@ -70,11 +69,6 @@ class ClientHandler(WebSocket):
     def received_message(self, message):
         try:
             print(">>>", message.data)
-            if not(self.idsent):
-                print("Sending ID for first message")
-                self.idsent = True
-                self.send({"id": self.client.id})
-                print("Done")
             print(self.listeners)
             for i in self.listeners:
                 print("Handling Message")
@@ -84,9 +78,9 @@ class ClientHandler(WebSocket):
                     msg['context'] = [msg['op'].split("__")[0], self.client.id]
                 i(msg)
         except Exception as e:
-            raise e
-            print("Receive Failed:")
             traceback.print_exc()
+            print("Receive Failed:")
+            raise e
             #print("Receive Failed")
  
 class NetworkServer:

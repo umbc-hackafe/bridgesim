@@ -102,7 +102,7 @@ function registerWithServer() {
     $("#center-btn").click(function() {
 	window.client.call("whoami", null, {
 	    callback: function(res) {
-		console.log("You are " + res.seq);
+		console.log("You are " + res.result);
 	    }
 	})});
 }

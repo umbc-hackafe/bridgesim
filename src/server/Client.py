@@ -1,5 +1,6 @@
 import uuid
 import random
+import traceback
 from ClientAPI import BaseContext, expose, readable
 
 ALL_KINDS = (
@@ -22,7 +23,8 @@ class Client:
         self.api = api
         self.maxage = 30
         self.sender.listeners.append(self.dataReceived)
-        self.specials = {"whoami": (lambda: self.id)}
+        self.specials = {"whoami": (lambda: self.id),
+                         "universes": (lambda: self.server.universe)}
 
 #        <op name>: {
 #            "function": <function pointer>,
@@ -32,13 +34,14 @@ class Client:
 
     def dataReceived(self, data):
         if data and "op" in data:
-            if data["op"] in self.specials:
-                result = {data["op"]: self.specials[data["op"]]()}
             if "seq" in data:
                 try:
-                    clsName, funcName = data["op"].split('__', 2)
-                    if clsName not in self.api.classes:
-                        raise Exception("Could not find {} in API".format(clsName))
+                    if data["op"] in self.specials:
+                        result = {"result": self.specials[data["op"]]()}
+                    else:
+                        clsName, funcName = data["op"].split('__', 2)
+                        if clsName not in self.api.classes:
+                            raise Exception("Could not find {} in API".format(clsName))
 
                         info = self.api.classes[clsName]
                         context = data.get("context", ())
@@ -49,17 +52,11 @@ class Client:
                         if funcName in info["methods"]:
                             result = self.api.onCall(clsName + "." + funcName,
                                                      context, *args, **kwargs)
-                            rDict = {"result": None, "seq": data["seq"]}
-                            rDict.update(result)
-                            self.sender.send(rDict)
 
                         # handle setting properties
                         elif funcName in info["writable"] and len(data["args"]) == 1:
                             result = self.api.onSet(clsName + "." + funcName,
                                                     context, *args)
-                            rDict = {"result": None, "seq": data["seq"]}
-                            rDict.update(result)
-                            self.sender.send(rDict)
                             print("Client set {} to {} in class {}".format(
                                 funcName, data["args"][0], clsName))
 
@@ -67,16 +64,21 @@ class Client:
                         elif funcName in info["readable"] and len(data["args"]) == 0:
                             result = self.api.onGet(clsName + "." + funcName,
                                                     context, *args, **kwargs)
-                            rDict = {"result": None, "seq": data["seq"]}
-                            rDict.update(result)
-                            self.sender.send(rDict)
                             print("Client got {} of class {}".format(funcName, clsName))
                         # unavailable function?
                         else:
                             print("Client tried to do {}.{}. Returning error.".format(funcName, clsName))
                             raise Exception("Operation not found")
+
+                    rDict = {"result": None, "seq": data["seq"]}
+                    rDict.update(result)
+                    self.sender.send(rDict)
+                except ValueError:
+                    print("Warning: received invalid op", data["op"])
                 except Exception as e:
+                    print("Exception while sending response:")
                     print(e)
+                    traceback.print_exc()
                     self.sender.send({"result": None, "error": str(e), "seq": data["seq"]})
             else:
                 print("Warning: received command without seq")
