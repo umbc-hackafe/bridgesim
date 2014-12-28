@@ -132,19 +132,10 @@ $(function() {
 	}
     });
 
-    var mapWidth = $("#minimap").width();
-    var mapHeight = $("#minimap").height();
 
-    minimap = $("#minimap")[0].getContext("2d");
-    minimap.fillStyle="#ff0000";
-    //minimap.fillRect(0, 0, mapWidth, mapHeight);
+    minimap = new Map($("#minimap")[0], {x: 500000, y: 500000}, {scale: .00005})
+    minimap.drawBlip(2500000, 2500000);
 
-    minimap.moveTo(0, 0);
-    minimap.lineTo(mapWidth, 0);
-    minimap.lineTo(mapWidth, mapHeight);
-    minimap.lineTo(0, mapHeight);
-    minimap.lineTo(0, 0);
-
-    minimap.strokeStyle = "#ffffff";
-    minimap.stroke();
+    console.log(minimap.getSectorName(0,0,0));
+    console.log(minimap.getSectorName(5000000,2000000,36000000));
 });
