@@ -1,5 +1,7 @@
 var camera, scene, renderer;
 
+var minimap;
+
 var ship;
 var spin = true;
 
@@ -129,4 +131,20 @@ $(function() {
 	    window.client.call("ClientUpdater__requestUpdates", ["ClientUpdater", 0], {args: ["entity", parseInt($(this).val())]});
 	}
     });
+
+    var mapWidth = $("#minimap").width();
+    var mapHeight = $("#minimap").height();
+
+    minimap = $("#minimap")[0].getContext("2d");
+    minimap.fillStyle="#ff0000";
+    //minimap.fillRect(0, 0, mapWidth, mapHeight);
+
+    minimap.moveTo(0, 0);
+    minimap.lineTo(mapWidth, 0);
+    minimap.lineTo(mapWidth, mapHeight);
+    minimap.lineTo(0, mapHeight);
+    minimap.lineTo(0, 0);
+
+    minimap.strokeStyle = "#ffffff";
+    minimap.stroke();
 });
