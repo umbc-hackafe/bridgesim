@@ -33,9 +33,19 @@ class VectorEncoder(json.JSONEncoder):
     def default(self, obj):
         if isinstance(obj, physics.Vector):
             return list(obj.dimensions)
-        if hasattr(obj, 'Context'):
-            return list(obj.Context(instance=obj))
         return json.JSONEncoder.default(self, obj)
+
+class ContextEncoder(VectorEncoder):
+    def default(self, obj):
+        if hasattr(obj, 'Context'):
+            return list(obj.Context(instance=obj).serialized())
+        return VectorEncoder.default(self, obj)
+
+class ExpansionEncoder(ContextEncoder):
+    def default(self, obj):
+        if hasattr(obj, "__api_readable__"):
+            return {k: getattr(obj, k) for k in obj.__api_readable__ if hasattr(obj, k)}
+        return ContextEncoder.default(self, obj)
 
 class ClientHandler(WebSocket):
     clients = {}
@@ -54,9 +64,12 @@ class ClientHandler(WebSocket):
     def opened(self):
         print("Test send")
 
-    def send(self, data):
+    def send(self, data, expand=False):
+        encoder=ContextEncoder
+        if expand:
+            encoder=ExpansionEncoder
         try:
-            encodeddata = json.dumps(data, cls=VectorEncoder, separators=(',',':')).encode('UTF-8')
+            encodeddata = json.dumps(data, cls=encoder, separators=(',',':')).encode('UTF-8')
             super().send(encodeddata)
         except Exception as e:
             print("Send Failed:")

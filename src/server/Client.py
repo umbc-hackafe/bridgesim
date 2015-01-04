@@ -98,14 +98,7 @@ class Client:
             self.updates[kind] = []
 
         if kind == "entity":
-            self.updates[kind].append(
-                { "id": data.id,
-                  "name": data.name,
-                  "loc": data.location,
-                  "rot": data.rotation,
-                  "vel": data.velocity,
-                  "events": [x.__str__() for x in data.events if x.age() < self.maxage]
-              })
+            self.updates[kind].append(data)
         # TODO add the remaining kinds of updates
 
     def destroy(self):
@@ -117,7 +110,7 @@ class Client:
             raise ClientClosedException()
         if self.updates:
             self.updates['updates'] = True
-            self.sender.send(self.updates)
+            self.sender.send(self.updates, expand=True)
         self.updates = {}
 
 @readable('universe')
