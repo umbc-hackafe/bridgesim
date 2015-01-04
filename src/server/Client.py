@@ -14,6 +14,9 @@ ALL_KINDS = (
     "universe"
 )
 
+class ClientClosedException(Exception):
+    pass
+
 class Client:
     def __init__(self, api, address, server, sender):
         self.updates = {}
@@ -25,6 +28,7 @@ class Client:
         self.sender.listeners.append(self.dataReceived)
         self.specials = {"whoami": (lambda: self.id),
                          "universes": (lambda: self.server.universe)}
+        self.closed = False
 
 #        <op name>: {
 #            "function": <function pointer>,
@@ -33,6 +37,8 @@ class Client:
 #        }
 
     def dataReceived(self, data):
+        if self.closed:
+            raise ClientClosedException()
         if data and "op" in data:
             if "seq" in data:
                 try:
@@ -86,6 +92,8 @@ class Client:
             print("Warning: received invalid op", data["op"])
 
     def queueUpdate(self, kind, data):
+        if self.closed:
+            raise ClientClosedException()
         if kind not in self.updates:
             self.updates[kind] = []
 
@@ -101,10 +109,12 @@ class Client:
         # TODO add the remaining kinds of updates
 
     def destroy(self):
+        self.closed = True
         self.sender.close()
-        del self.server.clients[self.id]
 
     def sendUpdate(self):
+        if self.closed:
+            raise ClientClosedException()
         if self.updates:
             self.updates['updates'] = True
             self.sender.send(self.updates)
