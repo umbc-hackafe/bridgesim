@@ -30,6 +30,12 @@ class Client:
                          "universes": (lambda: self.server.universe)}
         self.closed = False
 
+    def reinit(self, sender):
+        self.updates = {}
+        self.sender = sender
+        self.sender.listeners.append(self.dataReceived)
+        self.closed = False
+
 #        <op name>: {
 #            "function": <function pointer>,
 #            "args": <predefined arguments list>,

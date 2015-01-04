@@ -131,6 +131,12 @@ $(function() {
     window.client.socket.addOnOpen(function(evt) {
 	console.log("WebSocket is open!"); registerWithServer();
 	$(".conn-required").prop("disabled", false);
+	window.client.call("whoami", null, {
+	    callback: function(res) {
+		console.log("We are " + res.result);
+		document.cookie="clientid=" + res.result;
+	    }
+	});
     });
 
     window.client.socket.addOnClose(function(evt) {

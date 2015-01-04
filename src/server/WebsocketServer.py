@@ -7,6 +7,7 @@ import physics
 import os
 import json
 import traceback
+import uuid
 
 import cherrypy
 from ws4py.server.cherrypyserver import WebSocketPlugin, WebSocketTool
@@ -55,9 +56,22 @@ class ClientHandler(WebSocket):
         self.listeners = []
         self.listening = False
         print("Client connected!")
-        self.client = Client(self.api, None, self, self)
-        self.client.id = len(ClientHandler.clients)
-        ClientHandler.clients[self.client.id] = self.client
+
+        self.client = None
+
+        if "clientid" in cherrypy.request.cookie:
+            cookie_id = cherrypy.request.cookie["clientid"].value
+            if cookie_id in ClientHandler.clients.keys():
+                self.client = ClientHandler.clients[cookie_id]
+                self.client.reinit(self)
+                print("Reconnected cient {}".format(cookie_id))
+
+        if not self.client:
+            self.client = Client(self.api, None, self, self)
+            self.client.id = str(uuid.uuid4())
+            ClientHandler.clients[self.client.id] = self.client
+            print("Connected new client {}".format(self.client.id))
+
         updater = ClientUpdater(self.universe, self.client)
         self.universe.updaters.append(updater)
 
