@@ -139,7 +139,7 @@ RemoteFunction.prototype.call = function(context, kwargs) {
 function Client(host, port, path) {
     this.id = null; // This will be updated when connection is successful
     this.socket = null;
-    this.seq = 0;
+    this.seq = Math.floor(Math.random() * 9007199254740992);
     this.init(host, port, path);
 }
 
