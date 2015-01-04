@@ -75,6 +75,9 @@ function Map(canvas, anchor, options) {
     if (this.opts.sizeY)
 	this.scaleY = this.height / this.opts.sizeY
 
+    console.log("Map initiated, contains [" + this.anchorX() + "," + this.anchorY()
+		+ "] to [" + (this.anchorX() + this.width) + "," + (this.anchorY() + this.height) + "]");
+
     this.clear();
     this.drawLines();
     this.drawUI();
@@ -144,6 +147,8 @@ Map.prototype.drawBlip = function(x, y, options) {
 	    this.context.arc(loc.x, loc.y, 5, 0, 2 * Math.PI, true);
 	    this.context.fill();
 	}
+    } else {
+	console.log("Not on map");
     }
 }
 

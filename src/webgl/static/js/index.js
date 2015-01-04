@@ -109,6 +109,19 @@ function registerWithServer() {
 	})});
 }
 
+function handleUpdates(data) {
+    if ("updates" in data && data["updates"]) {
+	minimap.clear();
+	if ("entity" in data) {
+	    var entities = data["entity"];
+	    for (i in entities) {
+		var entity = entities[i];
+		minimap.drawBlip(entity.location[0], entity.location[1], {});
+	    }
+	}
+    }
+}
+
 $(function() {
     $(".conn-required").prop("disabled", true);
 
@@ -125,6 +138,8 @@ $(function() {
 	$(".conn-required").prop("disabled", true);
     });
 
+    window.client.socket.addOnMessage(handleUpdates);
+
     $("#test-btn").click(function() {
 	window.client.call("Ship__name", ["Ship", 0, 1], {callback: function(res) {
 	    $("#result-text").val(res.result);
@@ -140,9 +155,8 @@ $(function() {
 	}
     });
 
-
-    minimap = new Map($("#minimap")[0], {x: 500000, y: 500000}, {scale: .00005})
-    minimap.drawBlip(2500000, 2500000);
+    minimap = new Map($("#minimap")[0], {x: 0, y: 0}, {scale: .1})
+    //minimap.drawBlip(500, 1000);
 
     console.log(minimap.getSectorName(0,0,0));
     console.log(minimap.getSectorName(5000000,2000000,36000000));

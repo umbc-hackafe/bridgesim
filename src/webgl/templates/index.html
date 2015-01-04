@@ -14,7 +14,11 @@
 {% endblock header_includes %}
 
 {% block overlay_body %}
-  <canvas id="minimap" width="200px" height="200px"/></canvas>
+  <div id="minimap-container">
+    <canvas id="minimap" class="map" width="200px" height="200px"/></canvas><br/>
+    <button id="minimap-zoom-in">+</button>
+    <button id="minimap-zoom-out">-</button>
+  </div>
   <button class="conn-required" id="center-btn">Pause Rotation</button>
   <button class="conn-required" id="test-btn">Click to test stuff</button>
   <input class="conn-required" type="text" id="result-text" placeholder="Test..."/>
