@@ -12,18 +12,26 @@ import uuid
 import cherrypy
 from ws4py.server.cherrypyserver import WebSocketPlugin, WebSocketTool
 from ws4py.websocket import WebSocket
+import jinja2
 
 cherrypy.config.update( {
 	'server.socket_port': 9000,
 	'server.socket_host':'0.0.0.0',
+        'DEBUG': True
 })
 WebSocketPlugin(cherrypy.engine).subscribe()
 cherrypy.tools.websocket = WebSocketTool()
+env = jinja2.Environment(loader=jinja2.FileSystemLoader('../webgl/templates'))
 
 class Root():
+    # Because I'm lazy as hell...
+    def url_for(self, dir, filename):
+        return "/" + filename
+
     @cherrypy.expose
     def index(self):
-        return 'some HTML with a websocket javascript connection'
+        tmpl = env.get_template('index.html')
+        return tmpl.render(config=cherrypy.config, url_for=self.url_for)
 
     @cherrypy.expose
     def client(self):
@@ -126,7 +134,7 @@ class NetworkServer:
 				},
 				'/': {
 					'tools.staticdir.on' : True,
-				    'tools.staticdir.dir' : os.path.join( os.getcwd(), 'web/' ),
+				    'tools.staticdir.dir' : os.path.join( os.getcwd(), '../webgl/static/' ),
 	    			'tools.staticdir.index' : 'index.html'
 				}
 			});
