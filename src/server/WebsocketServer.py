@@ -76,7 +76,7 @@ class ClientHandler(WebSocket):
         self.universe.updaters.append(updater)
 
     def opened(self):
-        print("Test send")
+        pass
 
     def send(self, data, expand=False):
         encoder=ContextEncoder
@@ -96,9 +96,7 @@ class ClientHandler(WebSocket):
     def received_message(self, message):
         try:
             print(">>>", message.data)
-            print(self.listeners)
             for i in self.listeners:
-                print("Handling Message")
                 msg = json.loads(message.data.decode('UTF-8'))
                 if not 'context' in msg:
                     print("Adding context")
