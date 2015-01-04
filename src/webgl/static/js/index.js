@@ -110,12 +110,20 @@ function registerWithServer() {
 }
 
 $(function() {
+    $(".conn-required").prop("disabled", true);
+
     window.client = new Client(location.hostname, 9000, "/client");
     //window.client.init(location.hostname, 9000, "/client");
 
-    window.client.socket.addOnOpen(function(evt) { console.log("WebSocket is open!"); registerWithServer();});
-    window.client.socket.addOnClose(function(evt) { console.log("Socket CLOSED!"); });
-    //window.client.socket.addOnMessage(function(data) { console.log(data); });
+    window.client.socket.addOnOpen(function(evt) {
+	console.log("WebSocket is open!"); registerWithServer();
+	$(".conn-required").prop("disabled", false);
+    });
+
+    window.client.socket.addOnClose(function(evt) {
+	console.log("Socket CLOSED!");
+	$(".conn-required").prop("disabled", true);
+    });
 
     $("#test-btn").click(function() {
 	window.client.call("Ship__name", ["Ship", 0, 1], {callback: function(res) {
