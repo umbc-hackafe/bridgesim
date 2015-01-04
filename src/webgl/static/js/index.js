@@ -93,7 +93,7 @@ function render() {
 
     camera.lookAt(scene.position);
 
-    if(spin)
+    if(spin && ship && "rotation" in ship)
         ship.rotation.y += .01;
 
     renderer.render(scene, camera);
