@@ -26,8 +26,9 @@ class Client:
         self.api = api
         self.maxage = 30
         self.sender.listeners.append(self.dataReceived)
-        self.specials = {"whoami": (lambda: self.id),
-                         "universes": (lambda: self.server.universe)}
+        self.specials = {"whoami": (lambda d: self.id),
+                         "universes": (lambda d: [self.server.universe]),
+                         "expand": (lambda d: self.api.get(list(d["context"])))}
         self.closed = False
 
     def reinit(self, sender):
@@ -49,7 +50,7 @@ class Client:
             if "seq" in data:
                 try:
                     if data["op"] in self.specials:
-                        result = {"result": self.specials[data["op"]]()}
+                        result = {"result": self.specials[data["op"]](data)}
                     else:
                         clsName, funcName = data["op"].split('__', 2)
                         if clsName not in self.api.classes:
@@ -84,7 +85,7 @@ class Client:
 
                     rDict = {"result": None, "seq": data["seq"]}
                     rDict.update(result)
-                    self.sender.send(rDict)
+                    self.sender.send(rDict, expand=(data["op"] == "expand" or "expand" in data and data["expand"]))
                 except ValueError:
                     print("Warning: received invalid op", data["op"])
                 except Exception as e:

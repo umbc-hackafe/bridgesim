@@ -51,8 +51,15 @@ class ContextEncoder(VectorEncoder):
         return VectorEncoder.default(self, obj)
 
 class ExpansionEncoder(ContextEncoder):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.done = False
+
     def default(self, obj):
+        if self.done:
+            return ContextEncoder.default(self, obj)
         if hasattr(obj, "__api_readable__"):
+            self.done = True
             return {k: getattr(obj, k) for k in obj.__api_readable__ if hasattr(obj, k)}
         return ContextEncoder.default(self, obj)
 

@@ -116,6 +116,15 @@ class ClientAPI:
 
         return {"result": result}
 
+    def get(self, ctx):
+        cls = ctx[0]
+        classInfo = self.classes[cls]
+
+        context = classInfo["context"]
+        instance = context(serial=ctx).instance(self.globalContext)
+
+        return instance
+
     def getTable(self):
         return self.classes
 

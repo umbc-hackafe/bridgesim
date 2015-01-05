@@ -1,6 +1,9 @@
 from SharedClientDataStore import SharedClientDataStore
-from ClientAPI import BaseContext
+from ClientAPI import BaseContext, readable, writable, expose
+import Ship
 
+@readable('entities', 'height', 'width', 'id')
+@writable('name')
 class Universe:
   class Context(BaseContext):
     def __init__(self, instance=None, serial=None):
@@ -16,8 +19,10 @@ class Universe:
     def instance(self, global_context):
       return global_context.universes[self.id]
 
-  def __init__(self, size=(100000000, 100000000)):
+  def __init__(self, size=(100000000, 100000000), assets=None, name="Universe"):
     self.clientDataStore = SharedClientDataStore()
+    self.name = name
+    self.assets = assets
     self.entities = {}
     self.height = size[1]
     self.width = size[0]
@@ -25,6 +30,22 @@ class Universe:
     self.state = []
     self.updaters = []
     self.maxID = 0
+
+  @expose
+  def spawn_ship(self, **args):
+    if "type" in args:
+      if self.assets:
+        config = self.assets.find_asset(args["type"])
+      else:
+        config = {"type": args["type"]}
+
+    if "name" in args:
+      name = args["name"]
+
+    ship = Ship.Ship(config, self)
+    if name:
+      ship.name = name
+    self.add(ship)
     
   def add(self, entity):
     entity.id = self.maxID

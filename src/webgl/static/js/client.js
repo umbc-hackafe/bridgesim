@@ -79,7 +79,7 @@ SocketWrapper.prototype.close = function() {
     this.socket.close();
 }
 
-function RemoteFunction(socket, seq, name, callback, timeoutCallback) {
+function RemoteFunction(socket, seq, name, callback, timeoutCallback, expand) {
     this.socket = socket;
     this.seq = seq;
     this.name = name;
@@ -88,6 +88,7 @@ function RemoteFunction(socket, seq, name, callback, timeoutCallback) {
     this.timeoutCallback = timeoutCallback;
     this.completed = false;
     this.boundMethod = null;
+    this.expand = expand;
 }
 
 RemoteFunction.prototype.listener = function(data) {
@@ -117,7 +118,8 @@ RemoteFunction.prototype.call = function(context, kwargs) {
 	"op": this.name,
 	"args": Array.prototype.slice.call(arguments, 2),
 	"kwargs": kwargs,
-	"context": context
+	"context": context,
+	"expand": this.expand
     };
 
     // javascript is stupid
@@ -157,16 +159,20 @@ Client.prototype.call = function(name, context, extras) {
     //           }
     // );
     var args = [], kwargs = {}, callback;
+    var expand = false;
     if (extras && 'args' in extras) args = extras.args;
     if (extras && 'kwargs' in extras) kwargs = extras.kwargs;
     if (extras && 'callback' in extras) {
 	callback = extras.callback;
     }
+    if (extras && 'expand' in extras) {
+	expand = extras['expand'];
+    }
     this.seq += 1;
     var tmpSeq = this.seq;
     console.log("tmpSeq", tmpSeq);
     console.log(this.seq);
-    var rf = new RemoteFunction(this.socket, tmpSeq, name, callback, null);
+    var rf = new RemoteFunction(this.socket, tmpSeq, name, callback, null, expand);
     var newArgs = [context, kwargs].concat(args);
     rf.call.apply(rf, newArgs);
 };
