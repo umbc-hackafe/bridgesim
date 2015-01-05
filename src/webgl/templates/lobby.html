@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+
+{% block header_includes %}
+  {% if config.DEBUG %}
+    {{ super() }}
+    <script src="{{ url_for("static", filename="js/client.js") }}"></script>
+    <script src="{{ url_for("static", filename="js/lobby.js") }}"></script>
+    <link rel="stylesheet" href="{{ url_for("static", filename="css/lobby.css") }}" />
+  {% else %}
+    <script src="{{ url_for("static", filename="js/lobby.min.js") }}"></script>
+    <link rel="stylesheet" href="{{ url_for("static", filename="css/lobby.min.css") }}" />
+  {% endif %}
+{% endblock header_includes %}
+
+{% block body %}
+  <h1>bridgesim</h1>
+  <form id="lobby-form">
+    <div id="lobby-form-div">
+      <label for="player-name">Player Name: <input type="text" id="player-name"/></label>
+      <div class="conn-required">
+	<label for="universe">Universe: <select id="universe"></select></label>
+      </div>
+      <div class="universe-required">
+	<button id="ship-create">+</button>
+	<label for="ship">Ship: <select id="ship"></select></label>
+      </div>
+      <div class="ship-required">
+	<label for="ship-name">Name: <input type="text" id="ship-name" value="SPACESHIP!"/></label>
+	<div id="role-select">
+	  <label for="role-helm">Helm<input type="checkbox" id="role-helm" name="role" data-role="helm" data-max-players="1"/></label>
+	  <label for="role-weapons">Weapons<input type="checkbox" id="role-weapons" name="role" data-role="weapons"/></label>
+	  <!--Sub-Roles (arsenal selection) goes here?-->
+	  <label for="role-science">Science<input type="checkbox" id="role-science" name="role" data-role="science"/></label>
+	  <label for="role-comms">Communications<input type="checkbox" id="role-comms" name="role" data-role="comms"/></label>
+	  <label for="role-engineer">Engineering<input type="checkbox" id="role-engineer" name="role" data-role="engineer" data-max-players="1"/></label>
+	</div>
+      </div>
+      <div class="role-required">
+	<label for="ready">Ready: <input type="checkbox" id="ready"/></label>
+      </div>
+      <div class="all-ready-required role-helm-required">
+	<button id="enter-game">Begin</button>
+      </div>
+{% endblock body %}

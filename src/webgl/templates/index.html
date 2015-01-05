@@ -3,6 +3,7 @@
 {% block header_includes %}
   {% if config.DEBUG %}
     {{ super() }}
+    <script src="{{ url_for("static", filename="js/map.js") }}"></script>
     <script src="{{ url_for("static", filename="js/client.js") }}"></script>
     <script src="{{ url_for("static", filename="js/index.js") }}"></script>
     <link rel="stylesheet" href="{{ url_for("static", filename="css/index.css") }}" />
@@ -13,9 +14,14 @@
 {% endblock header_includes %}
 
 {% block overlay_body %}
-  <button id="center-btn">Pause Rotation</button>
-  <button id="test-btn">Click to test stuff</button>
-  <input type="text" id="result-text" placeholder="Test..."/>
-  <label><input type="checkbox" id="update-enable"/>Receive Updates</label>
-  <label>Frequency: <input type="number" id="update-freq" min="5" max="30" value="10"/></label>
+  <div id="minimap-container">
+    <canvas id="minimap" class="map" width="200px" height="200px"/></canvas><br/>
+    <button id="minimap-zoom-in">+</button>
+    <button id="minimap-zoom-out">-</button>
+  </div>
+  <button class="conn-required" id="center-btn">Pause Rotation</button>
+  <button class="conn-required" id="test-btn">Click to test stuff</button>
+  <input class="conn-required" type="text" id="result-text" placeholder="Test..."/>
+  <label><input class="conn-required" type="checkbox" id="update-enable"/>Receive Updates</label>
+  <label>Frequency: <input class="conn-required" type="number" id="update-freq" min="5" max="30" value="10"/></label>
 {% endblock overlay_body %}

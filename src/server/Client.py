@@ -1,6 +1,7 @@
 import uuid
 import random
-from ClientAPI import BaseContext, expose
+import traceback
+from ClientAPI import BaseContext, expose, readable
 
 ALL_KINDS = (
     "entity",
@@ -13,6 +14,9 @@ ALL_KINDS = (
     "universe"
 )
 
+class ClientClosedException(Exception):
+    pass
+
 class Client:
     def __init__(self, api, address, server, sender):
         self.updates = {}
@@ -22,6 +26,16 @@ class Client:
         self.api = api
         self.maxage = 30
         self.sender.listeners.append(self.dataReceived)
+        self.specials = {"whoami": (lambda d: self.id),
+                         "universes": (lambda d: [self.server.universe]),
+                         "expand": (lambda d: self.api.get(list(d["context"])))}
+        self.closed = False
+
+    def reinit(self, sender):
+        self.updates = {}
+        self.sender = sender
+        self.sender.listeners.append(self.dataReceived)
+        self.closed = False
 
 #        <op name>: {
 #            "function": <function pointer>,
@@ -30,86 +44,83 @@ class Client:
 #        }
 
     def dataReceived(self, data):
+        if self.closed:
+            raise ClientClosedException()
         if data and "op" in data:
             if "seq" in data:
-                clsName, funcName = data["op"].split('__', 2)
-                info = self.api.classes[clsName]
-                context = data.get("context", ())
-                args = data.get("args", [])
-                kwargs = data.get("kwargs", {})
+                try:
+                    if data["op"] in self.specials:
+                        result = {"result": self.specials[data["op"]](data)}
+                    else:
+                        clsName, funcName = data["op"].split('__', 2)
+                        if clsName not in self.api.classes:
+                            raise Exception("Could not find {} in API".format(clsName))
 
-                # handle method calls
-                if funcName in info["methods"]:
-                    try:
-                        result = self.api.onCall(clsName + "." + funcName,
-                                                 context, *args, **kwargs)
-                        rDict = {"result": None, "seq": data["seq"]}
-                        rDict.update(result)
-                        self.sender.send(rDict)
-                    except Exception as e:
-                        print(e)
-                        self.sender.send({"result": None, "error": e, "seq": data["seq"]})
+                        info = self.api.classes[clsName]
+                        context = data.get("context", ())
+                        args = data.get("args", [])
+                        kwargs = data.get("kwargs", {})
+                        
+                        # handle method calls
+                        if funcName in info["methods"]:
+                            result = self.api.onCall(clsName + "." + funcName,
+                                                     context, *args, **kwargs)
 
-                # handle setting properties
-                elif funcName in info["writable"] and len(data["args"]) == 1:
-                    try:
-                        result = self.api.onSet(clsName + "." + funcName,
-                                                context, *args)
-                        rDict = {"result": None, "seq": data["seq"]}
-                        rDict.update(result)
-                        self.sender.send(rDict)
-                    except Exception as e:
-                        print(e)
-                        self.sender.send({"result": None, "error": e, "seq": data["seq"]})
-                    print("Client set {} to {} in class {}".format(
-                        funcName, data["args"][0], clsName))
+                        # handle setting properties
+                        elif funcName in info["writable"] and len(data["args"]) == 1:
+                            result = self.api.onSet(clsName + "." + funcName,
+                                                    context, *args)
+                            print("Client set {} to {} in class {}".format(
+                                funcName, data["args"][0], clsName))
 
-                # handle getting properties
-                elif funcName in info["readable"] and len(data["args"]) == 0:
-                    try:
-                        result = self.api.onGet(clsName + "." + funcName,
-                                                 context, *args, **kwargs)
-                        rDict = {"result": None, "seq": data["seq"]}
-                        rDict.update(result)
-                        self.sender.send(rDict)
-                    except Exception as e:
-                        print(e)
-                        self.sender.send({"result": None, "error": e, "seq": data["seq"]})
-                    print("Client got {} of class {}".format(funcName, clsName))
-                # unavailable function?
-                else:
-                    print("Client tried to do {}.{}. Returning error.")
-                    self.sender.send({"result": None, "error": "Operation not found", "seq": data["seq"]})
+                        # handle getting properties
+                        elif funcName in info["readable"] and len(data["args"]) == 0:
+                            result = self.api.onGet(clsName + "." + funcName,
+                                                    context, *args, **kwargs)
+                            print("Client got {} of class {}".format(funcName, clsName))
+                        # unavailable function?
+                        else:
+                            print("Client tried to do {}.{}. Returning error.".format(funcName, clsName))
+                            raise Exception("Operation not found")
+
+                    rDict = {"result": None, "seq": data["seq"]}
+                    rDict.update(result)
+                    self.sender.send(rDict, expand=(data["op"] == "expand" or "expand" in data and data["expand"]))
+                except ValueError:
+                    print("Warning: received invalid op", data["op"])
+                except Exception as e:
+                    print("Exception while sending response:")
+                    print(e)
+                    traceback.print_exc()
+                    self.sender.send({"result": None, "error": str(e), "seq": data["seq"]})
             else:
                 print("Warning: received command without seq")
         else:
             print("Warning: received invalid op", data["op"])
 
     def queueUpdate(self, kind, data):
+        if self.closed:
+            raise ClientClosedException()
         if kind not in self.updates:
             self.updates[kind] = []
 
         if kind == "entity":
-            self.updates[kind].append(
-                { "id": data.id,
-                  "name": data.name,
-                  "loc": data.location,
-                  "rot": data.rotation,
-                  "vel": data.velocity,
-                  "events": [x.__str__() for x in data.events if x.age() < self.maxage]
-              })
+            self.updates[kind].append(data)
         # TODO add the remaining kinds of updates
 
     def destroy(self):
+        self.closed = True
         self.sender.close()
-        del self.server.clients[self.id]
 
     def sendUpdate(self):
+        if self.closed:
+            raise ClientClosedException()
         if self.updates:
             self.updates['updates'] = True
-            self.sender.send(self.updates)
+            self.sender.send(self.updates, expand=True)
         self.updates = {}
 
+@readable('universe')
 class ClientUpdater:
     class Context(BaseContext):
         def __init__(self, instance=None, serial=None):

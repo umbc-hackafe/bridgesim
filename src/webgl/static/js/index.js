@@ -1,5 +1,7 @@
 var camera, scene, renderer;
 
+var minimap;
+
 var ship;
 var spin = true;
 
@@ -91,7 +93,7 @@ function render() {
 
     camera.lookAt(scene.position);
 
-    if(spin)
+    if(spin && ship && "rotation" in ship)
         ship.rotation.y += .01;
 
     renderer.render(scene, camera);
@@ -102,23 +104,47 @@ function registerWithServer() {
     $("#center-btn").click(function() {
 	window.client.call("whoami", null, {
 	    callback: function(res) {
-		console.log("You are " + res.seq);
+		console.log("You are " + res.result);
 	    }
 	})});
+}
 
+function handleUpdates(data) {
+    if ("updates" in data && data["updates"]) {
+	minimap.clear();
+	if ("entity" in data) {
+	    var entities = data["entity"];
+	    for (i in entities) {
+		var entity = entities[i];
+		minimap.drawBlip(entity.location[0], entity.location[1], {});
+	    }
+	}
+    }
 }
 
 $(function() {
-    window.client.init(location.hostname, 9000, "/client");
-    client.call("Ship__name", ["Ship", 0, 1],
-		       {
-			   callback: function(res) {
-			       $("#result-text").val(res.result);
-			   }
-		       });
+    $(".conn-required").prop("disabled", true);
 
-    window.client.socket.addOnOpen(function(evt) { console.log("WebSocket is open!"); registerWithServer();});
-    //window.client.socket.addOnMessage(function(data) { console.log(data); });
+    window.client = new Client(location.hostname, 9000, "/client");
+    //window.client.init(location.hostname, 9000, "/client");
+
+    window.client.socket.addOnOpen(function(evt) {
+	console.log("WebSocket is open!"); registerWithServer();
+	$(".conn-required").prop("disabled", false);
+	window.client.call("whoami", null, {
+	    callback: function(res) {
+		console.log("We are " + res.result);
+		document.cookie="clientid=" + res.result;
+	    }
+	});
+    });
+
+    window.client.socket.addOnClose(function(evt) {
+	console.log("Socket CLOSED!");
+	$(".conn-required").prop("disabled", true);
+    });
+
+    window.client.socket.addOnMessage(handleUpdates);
 
     $("#test-btn").click(function() {
 	window.client.call("Ship__name", ["Ship", 0, 1], {callback: function(res) {
@@ -134,4 +160,10 @@ $(function() {
 	    window.client.call("ClientUpdater__requestUpdates", ["ClientUpdater", 0], {args: ["entity", parseInt($(this).val())]});
 	}
     });
+
+    minimap = new Map($("#minimap")[0], {x: 0, y: 0}, {scale: .1})
+    //minimap.drawBlip(500, 1000);
+
+    console.log(minimap.getSectorName(0,0,0));
+    console.log(minimap.getSectorName(5000000,2000000,36000000));
 });

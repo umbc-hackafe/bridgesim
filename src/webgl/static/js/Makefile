@@ -9,7 +9,7 @@ all: $(JS_TARGETS)
 three/three.min.js: $(THREE)
 	closure $(COMPILE_FLAGS) --js_output_file $@ $^
 
-index.min.js: index.js client.js $(THREE)
+index.min.js: index.js client.js map.js $(THREE)
 	closure $(COMPILE_FLAGS) --js_output_file $@ $^
 
 clean:

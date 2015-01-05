@@ -5,6 +5,10 @@ from ClientAPI import writable
 
 @writable('name')
 class Ship(Entity):
+  class Context(Entity.Context):
+    def serialized(self):
+      return ("Ship", self.universe, self.id)
+
   def __init__(self, config, universe):
     super().__init__(config, universe)
     self.__dict__.update(config)

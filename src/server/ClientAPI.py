@@ -81,8 +81,6 @@ class ClientAPI:
         instance = context(serial=ctx).instance(self.globalContext)
 
         result = getattr(instance, attr, None)
-        if hasattr(result, 'Context'):
-            return {"result": result, "context": result.Context(instance=result)}
         return {"result": result}
 
     def onSet(self, name, ctx, value):
@@ -101,8 +99,7 @@ class ClientAPI:
             result = getattr(instance, attr)
         else:
             result = None
-        if hasattr(result, 'Context'):
-            return {"result": result, "context": result.Context(instance=result)}
+
         return {"result": result}
 
     def onCall(self, name, ctx, *args, **kwargs):
@@ -116,9 +113,17 @@ class ClientAPI:
 
         method = classInfo["methods"][func]["callable"]
         result = method(instance, *args, **kwargs)
-        if hasattr(result, 'Context'):
-            return {"result": result, "context": result.Context(instance=result)}
+
         return {"result": result}
+
+    def get(self, ctx):
+        cls = ctx[0]
+        classInfo = self.classes[cls]
+
+        context = classInfo["context"]
+        instance = context(serial=ctx).instance(self.globalContext)
+
+        return instance
 
     def getTable(self):
         return self.classes
