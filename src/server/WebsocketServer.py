@@ -28,10 +28,17 @@ class Root():
     def url_for(self, dir, filename):
         return "/" + filename
 
+    def template(self, name, **args):
+        tmpl = env.get_template(name)
+        return tmpl.render(config=cherrypy.config, url_for=self.url_for, **args)
+
     @cherrypy.expose
     def index(self):
-        tmpl = env.get_template('index.html')
-        return tmpl.render(config=cherrypy.config, url_for=self.url_for)
+        return self.template('index.html')
+
+    @cherrypy.expose
+    def lobby(self):
+        return self.template('lobby.html')
 
     @cherrypy.expose
     def client(self):

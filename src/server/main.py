@@ -13,14 +13,15 @@ import ClientAPI
 import Client
 import SharedClientDataStore
 import sys
+import AssetManager
 
 frameRate = 100
 
-with open("../../assets/data/ships/destroyer.json", 'r') as shipConfFile:
-  shipConf = json.load(shipConfFile)
-with open("../data/weapons.json", 'r') as missileConfFile:
-  missileConf = json.load(missileConfFile)
-missileConf = missileConf['weapons']['nuke']
+assets = AssetManager.AssetManager(["../../assets/data/", "../data"])
+
+shipConf = assets.find_asset("ships", "destroyer")
+missileConf = assets.find_asset("weapons", "weapons")["weapons"]["nuke"]
+
 size = width, height = 6400,4800
 
 if "-v" in sys.argv:
