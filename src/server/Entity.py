@@ -5,7 +5,7 @@ import random
 import time
 from ClientAPI import BaseContext, readable
 
-@readable('location', 'rotation', 'velocity', 'universe', 'radius', 'mass', 'events')
+@readable('location', 'rotation', 'velocity', 'universe', 'radius', 'mass', 'events', 'id')
 class Entity:
   class Context(BaseContext):
     def __init__(self, instance=None, serial=None):
