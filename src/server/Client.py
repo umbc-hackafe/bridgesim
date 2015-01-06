@@ -172,8 +172,9 @@ class ClientUpdater:
     def sendUpdates(self, kinds):
         for kind in kinds:
             if kind == "entity":
-                for entity in self.universe.entities.values():
-                    self.client.queueUpdate(kind, entity)
+                for universe in self.universes:
+                    for entity in universe.entities.values():
+                        self.client.queueUpdate(kind, entity)
             elif kind == "comms":
                 pass
             elif kind == "weapons":

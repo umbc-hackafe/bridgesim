@@ -1,4 +1,3 @@
-from SharedClientDataStore import SharedClientDataStore
 from ClientAPI import BaseContext, readable, writable, expose
 import Ship
 
@@ -20,7 +19,6 @@ class Universe:
       return global_context.universes[self.id]
 
   def __init__(self, size=(100000000, 100000000), assets=None, name="Universe"):
-    self.clientDataStore = SharedClientDataStore()
     self.name = name
     self.assets = assets
     self.entities = {}
