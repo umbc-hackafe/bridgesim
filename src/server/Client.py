@@ -29,7 +29,13 @@ class Client:
         self.sender.listeners.append(self.dataReceived)
         self.specials = {"whoami": (lambda d: self.id),
                          "universes": (lambda d: [self.server.universe]),
-                         "expand": (lambda d: self.api.get(list(d["context"])))}
+                         "expand": (lambda d: self.api.get(list(d["context"]))),
+                         "functions": lambda d: {cls:
+                                                 {"readable": info["readable"],
+                                                  "writable": info["writable"],
+                                                  "methods": [m for m in info["methods"]]}
+                                                 for cls, info in self.api.getTable().items()}
+        }
         self.closed = False
 
     def reinit(self, sender):
