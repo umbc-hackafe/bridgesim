@@ -12,6 +12,8 @@ class SharedClientDataStore:
         "len_le": lambda l,v: len(l) <= v,
         "len_ge": lambda l,v: len(l) >= v,
         "len_eq": lambda l,v: len(l) == v,
+        "contains": lambda l,v: v in l,
+        "not_contains": lambda l,v: v not in l,
 
         "empty": lambda l,v: len(l) == 0,
     }
