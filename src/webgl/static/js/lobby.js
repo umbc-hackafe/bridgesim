@@ -40,27 +40,78 @@ function loadShips() {
 		callback: function(res) {
 		    console.log("Ship result", res.result);
 		    $("#ship").append($("<option>").attr("value", res.result.id).text(res.result.name));
+		    $("#ship-name").val($("#ship :selected").text());
+		    $(".ship-required").show();
 		}
 	    });
 	}
     }
-    $(".ship-required").show();
 }
 
 $(function() {
+    $("#lobby-form")[0].reset();
     $('[class*="-required"]').hide();
 
     $("#universe").change(function() {
     });
 
-    $("#lobby-form input[name=role]").change(function() {
+    $("#ship").change(function() {
+	$("#ship-name").val($("#ship :selected").text());
+    });
+
+    $("#ship-name").keyup(function() {
+	$("#ship :selected").text($("#ship-name").val());
+    });
+
+    $("#ship-name").change(function() {
+	if ($("#ship :selected").val()) {
+	    window.client.call("Ship__name", ["Ship", parseInt($("#universe :selected").val()), parseInt($("#ship :selected").val())], {
+		args: [$("#ship-name").val()],
+		callback: function(res) {
+                    console.log("rename gave ", res);
+		}
+	    });
+	} else {
+	    console.log("Ship not created yet, waiting to update");
+	}
+    });
+
+    $("#lobby-form input[name=role]").change(function(evt) {
+	console.log(evt);
+	console.log($(evt.target).prop("checked"));
+	console.log("target", $(evt.target));
+	if ($(evt.target).prop('checked')) {
+	    var filters = {not_contains: window.clientID};
+	    if (evt.target.dataset.maxPlayers) {
+		console.log("It has max players: " + evt.target.dataset.maxPlayers);
+		filters["len_lt"] = parseInt(evt.target.dataset.maxPlayers);
+	    }
+
+	    window.client.call("SharedClientDataStore__list_append", null, {
+		args: ["lobby.ship-" + $("#universe :selected").val() + "-" + $("#ship :selected").val()
+		       + ".role-" + evt.target.dataset.role, window.clientID],
+		kwargs: filters,
+		callback: function(res) {
+		    console.log("list_append: ", res);
+		}
+	    });
+	} else {
+	    window.client.call("SharedClientDataStore__list_delete", null, {
+		args: ["lobby.ship-" + $("#universe :selected").val() + "-" + $("#ship :selected").val()
+		       + ".role-" + evt.target.dataset.role],
+		kwargs: {value: window.clientID},
+		callback: function(res) {
+		    console.log("list_delete: ", res);
+		}
+	    });
+	}
+
 	console.log("blah");
 	if ($("#lobby-form input[name=role]:checked").length) {
-	    console.log("ok");
 	    $(".role-required").show();
 	} else {
-	    console.log("not ok");
 	    $(".role-required").hide();
+	    $("#ready").attr("checked", false);
 	}
     });
 
@@ -72,6 +123,7 @@ $(function() {
 	    callback: function(res) {
 		console.log("We are " + res.result);
 		document.cookie="clientid=" + res.result;
+		window.clientID = res.result;
 		$(".conn-required, .id-required").show();
 	    }
 	});
