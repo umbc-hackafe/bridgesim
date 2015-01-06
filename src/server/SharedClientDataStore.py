@@ -64,7 +64,7 @@ class SharedClientDataStore:
                         if not self.SCALAR_FILTERS[f_name](self.__data[key], self.__val(f_val)):
                             return False
                     if "list" in kinds and f_name in self.LIST_FILTERS:
-                        if not self.LIST_FILTERS[f_name](key, self.__val(f_val)):
+                        if not self.LIST_FILTERS[f_name](self.__data[key], self.__val(f_val)):
                             return False
                     if "key" in kinds and f_name in self.KEY_FILTERS:
                         if not self.KEY_FILTERS[f_name](self.__data, key, self.__val(f_val)):
