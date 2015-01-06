@@ -120,6 +120,10 @@ class ClientHandler(WebSocket):
         updater = ClientUpdater(self.universe, self.client)
         self.universe.updaters.append(updater)
 
+    def closed(self, code, message):
+        super().closed(code, message)
+        self.client.destroy()
+
     def opened(self):
         pass
 

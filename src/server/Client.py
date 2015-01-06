@@ -183,7 +183,13 @@ class ClientUpdater:
                 pass
             elif kind == "meta":
                 pass
-        self.client.sendUpdate()
+        try:
+            if self.client.updates:
+                self.client.sendUpdate()
+        except ClientClosedException:
+            print("Canceling updates; client closed")
+            self.clientWants = {}
+            self.offsets = {}
 
     def tick(self):
         toUpdate = []
