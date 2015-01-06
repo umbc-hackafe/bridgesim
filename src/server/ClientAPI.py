@@ -18,12 +18,20 @@ class GlobalContext:
         self.network = network
 
 # ** Function Decorator **
-def expose(func, label=None):
-    if not label:
-        label = func.__name__
-    setattr(func, "__api_exposed__", True)
-    setattr(func, "__api_label__", label)
-    return func
+def expose(func=None, label=None, client=False):
+    if func != None:
+        print("expose({}, label={}, client={})".format(func, label, client))
+        if not label:
+            label = func.__name__
+        setattr(func, "__api_exposed__", True)
+        setattr(func, "__api_label__", label)
+        if client:
+            setattr(func, "__api_pass_client__", True)
+        return func
+    else:
+        def partial(func):
+            return expose(func, label=label, client=client)
+        return partial
 
 def readable(*attrs):
     def decorator(cls):
@@ -102,7 +110,7 @@ class ClientAPI:
 
         return {"result": result}
 
-    def onCall(self, name, ctx, *args, **kwargs):
+    def onCall(self, name, ctx, *args, client=None, **kwargs):
         cls, func = name.split(".")
         classInfo = self.classes[cls]
         if func not in classInfo["methods"]:
@@ -112,6 +120,8 @@ class ClientAPI:
         instance = context(serial=ctx).instance(self.globalContext)
 
         method = classInfo["methods"][func]["callable"]
+        if classInfo["methods"][func]["pass_client"]:
+            kwargs["client"] = client
         result = method(instance, *args, **kwargs)
 
         return {"result": result}
@@ -139,6 +149,10 @@ class ClientAPI:
             method = getattr(cls, methname)
             if hasattr(method, "__api_exposed__") and hasattr(method, "__api_label__"):
                 methods[method.__api_label__] = {"callable": method}
+                if hasattr(method, "__api_pass_client__") and method.__api_pass_client__:
+                    methods[method.__api_label__]["pass_client"] = True
+                else:
+                    methods[method.__api_label__]["pass_client"] = False
 
         readable = []
         writable = []

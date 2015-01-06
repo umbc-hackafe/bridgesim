@@ -31,9 +31,12 @@ class SharedClientDataStore:
         "set": lambda d,k,v: k in d,
     }
 
-    def __init__(self):
+    def __init__(self, server):
         self.__data = {}
         self.readonly = []
+        self.__updates = {}
+        self.__clients = set()
+        self.server = server
         self.lock = threading.Lock()
 
     def __get(self, key):
@@ -82,26 +85,64 @@ class SharedClientDataStore:
                     return False
         return True
 
-    @expose
-    def get(self, key, default=None):
+    def get_updates(self, client):
+        if client.id not in self.__updates:
+            return []
+        return [{key: self.__data[key]} for key in self.__updates[client.id]]
+
+    def queue_updates(self, key, caller):
+        """
+        Should be called on a set method, indicating that caller has updated
+        key and all the other clients should have its new value queued. We
+        assume that the given client will get the value and is thus already
+        updated.
+        """
+        for client in self.__clients:
+            if client != caller.id:
+                if caller not in self.__updates:
+                    self.__updates[caller.id] = set()
+                self.__updates[client].add(key)
+
+    def dequeue_update(self, key, caller):
+        """
+        This should be called on a get method, indicating that the client
+        is up-to-date for this particular key. If the key is None, the client
+        is to be considered up-to-date for all keys.
+        """
+        if caller.id not in self.__updates:
+            self.__updates[caller.id] = set()
+        if caller.id not in self.__clients:
+            self.__clients.add(caller.id)
+
+        if key is None:
+            # do all of them
+            self.__updates[caller.id] = set()
+        else:
+            self.__updates[caller.id].remove(key)
+
+    @expose(client=True)
+    def get(self, key, default=None, client=None):
         with self.lock:
             if key in self.__data:
+                self.dequeue_update(key, client)
                 return self.__data[key]
             else:
                 return default
 
-    @expose
-    def get_or_set_default(self, key, default, ro=False):
+    @expose(client=True)
+    def get_or_set_default(self, key, default, ro=False, client=None):
         val = self.get(key, default)
         with self.lock:
             if key not in self.__data:
+                self.queue_updates(key, client)
                 self.__data[key] = val
                 if ro:
                     self.readonly.append(key)
+        self.dequeue_update(key, client)
         return val
 
-    @expose
-    def set(self, key, value, ro=False, **filters):
+    @expose(client=True)
+    def set(self, key, value, ro=False, client=None, **filters):
         with self.lock:
             if not self.__handle_filters(key, filters, kinds=["key"]):
                 return (False, self.__data[key] if key in self.__data else None)
@@ -109,17 +150,18 @@ class SharedClientDataStore:
             if key in self.__data:
                 if key not in self.readonly and self.__handle_filters(key, filters, kinds=["scalar"]):
                     self.__data[key] = value
+                    self.queue_updates(key, client)
                     if ro:
                         self.readonly.append(key)
                     return (True, value)
             return (False, None)
 
-    @expose
-    def set_if_missing(self, key, value, ro=False):
-        return self.set(key, value, ro, unset=True)
+    @expose(client=True)
+    def set_if_missing(self, key, value, ro=False, client=None):
+        return self.set(key, value, ro, unset=True, client=client)
 
-    @expose
-    def list_append(self, key, value=None, values=None, **filters):
+    @expose(client=True)
+    def list_append(self, key, value=None, values=None, client=None, **filters):
         with self.lock:
             if not self.__handle_filters(key, filters, kinds=["key"]):
                 return (False, self.__data[key] if key in self.__data else None)
@@ -131,6 +173,7 @@ class SharedClientDataStore:
                     self.__data[key] = list(values)
                 else:
                     self.__data[key] = []
+                self.queue_updates(key, client)
                 return (True, self.__data[key])
             else:
                 if not self.__handle_filters(key, filters, kinds=["list"]):
@@ -144,14 +187,15 @@ class SharedClientDataStore:
                             self.__data[key].extend(values)
                         else:
                             pass
+                        self.queue_updates(key, client)
                         return (True, self.__data[key])
                     except TypeError:
                         return (False, self.__data[key])
                 else:
                     return (False, self.__data[key])
 
-    @expose
-    def list_set(self, key, index, value, **filters):
+    @expose(client=True)
+    def list_set(self, key, index, value, client=None, **filters):
         with self.lock:
             if not self.__handle_filters(key, filters, kinds=["key"]):
                 return (False, None)
@@ -167,16 +211,18 @@ class SharedClientDataStore:
                         self.__data[key][index] = value
                     else:
                         return (False, None)
+                    self.queue_updates(key, client)
                     return (True, self.__data[key][index])
                 else:
                     return (False, None)
             else:
                 # Make the thing if it doesn't exist because we're so nice
                 self.__data[key] = [value]
+                self.queue_updates(key, client)
                 return (True, self.__data[key][index])
 
-    @expose
-    def list_get(self, key, index, slice_index=False, default=None):
+    @expose(client=True)
+    def list_get(self, key, index, slice_index=False, default=None, client=None):
         """
         Returns elements from a list, or the default value if the
         list item was not found. Allows retrieving slices as well,
@@ -200,14 +246,16 @@ class SharedClientDataStore:
                 elif slice_index != False:
                     if index is None:
                         index = 0
+                    self.dequeue_update(key, client)
                     return self.__data[key][index:slice_index]
                 elif index != None and slice_index is None:
+                    self.dequeue_update(key, client)
                     return self.data[key][index:]
             else:
                 return None
 
-    @expose
-    def delete(self, key, **filters):
+    @expose(client=True)
+    def delete(self, key, client=None, **filters):
         with self.lock:
             if not self.__handle_filters(key, filters, kinds=["key"]):
                 return False
@@ -216,12 +264,13 @@ class SharedClientDataStore:
                 if not self.__handle_filters(key, filters, kinds=["list"]):
                     return False
                 del self.__data[key]
+                self.queue_updates(key, client)
                 return True
             else:
                 return None
 
-    @expose
-    def list_delete(self, key, index=None, end=None, value=None, **filters):
+    @expose(client=True)
+    def list_delete(self, key, index=None, end=None, value=None, client=None, **filters):
         # Check they aren't confusing us with parameters
         if (end and not index) or (value and (index or end)) or not (index or end or value):
             return False
@@ -244,6 +293,7 @@ class SharedClientDataStore:
                     del self.__data[key][index:end]
                 else:
                     del self.__data[key][index]
+                self.queue_updates(key, client)
                 return self.__data[key]
             else:
                 return None

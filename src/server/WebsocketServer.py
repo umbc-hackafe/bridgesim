@@ -1,6 +1,7 @@
 import sys
 from Client import Client, ClientUpdater
 from SocketNetworker import SocketNetworker
+from SharedClientDataStore import SharedClientDataStore
 import threading
 import socket
 import physics
@@ -161,10 +162,9 @@ class NetworkServer:
     def __init__(self, config, universe):
         self.__dict__.update(config)
         self.universe = universe
-        self.store = self.universe.clientDataStore
+        self.store = SharedClientDataStore(self)
         ClientHandler.universe = universe
-        ClientHandler.store = self.universe.clientDataStore
-        self.store = self.universe.clientDataStore
+        ClientHandler.store = self.store
         self.clients = ClientHandler.clients
 
     def run(self):

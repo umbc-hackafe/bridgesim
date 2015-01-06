@@ -11,7 +11,8 @@ ALL_KINDS = (
     "helm",
     "ship",
     "meta",
-    "universe"
+    "universe",
+    "store"
 )
 
 class ClientClosedException(Exception):
@@ -64,7 +65,7 @@ class Client:
                         # handle method calls
                         if funcName in info["methods"]:
                             result = self.api.onCall(clsName + "." + funcName,
-                                                     context, *args, **kwargs)
+                                                     context, *args, client=self, **kwargs)
 
                         # handle setting properties
                         elif funcName in info["writable"] and len(data["args"]) == 1:
@@ -98,14 +99,16 @@ class Client:
         else:
             print("Warning: received invalid op", data["op"])
 
-    def queueUpdate(self, kind, data):
+    def queueUpdate(self, kind, *data):
         if self.closed:
             raise ClientClosedException()
         if kind not in self.updates:
             self.updates[kind] = []
 
         if kind == "entity":
-            self.updates[kind].append(data)
+            self.updates[kind].extend(data)
+        if kind == "store":
+            self.updates[kind].extend(data)
         # TODO add the remaining kinds of updates
 
     def destroy(self):
@@ -183,6 +186,14 @@ class ClientUpdater:
                 pass
             elif kind == "meta":
                 pass
+            elif kind == "universe":
+                pass
+            elif kind == "store":
+                for update in self.client.server.store.get_updates(self.client):
+                    if update:
+                        self.client.queueUpdate(kind, update)
+                self.client.server.store.dequeue_update(None, self.client)
+
         try:
             if self.client.updates:
                 self.client.sendUpdate()
