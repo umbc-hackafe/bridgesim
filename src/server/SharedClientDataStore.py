@@ -205,3 +205,45 @@ class SharedClientDataStore:
                     return self.data[key][index:]
             else:
                 return None
+
+    @expose
+    def delete(self, key, **filters):
+        with self.lock:
+            if not self.__handle_filters(key, filters, kinds=["key"]):
+                return False
+
+            if key in self.__data:
+                if not self.__handle_filters(key, filters, kinds=["list"]):
+                    return False
+                del self.__data[key]
+                return True
+            else:
+                return None
+
+    @expose
+    def list_delete(self, key, index=None, end=None, value=None, **filters):
+        # Check they aren't confusing us with parameters
+        if (end and not index) or (value and (index or end)) or not (index or end or value):
+            return False
+
+        with self.lock:
+            if not self.__handle_filters(key, filters, kinds=["key"]):
+                return False
+            if key in self.__data:
+                if value != None:
+                    try:
+                        index = self.__data[key].index(value)
+                    except ValueError:
+                        return False
+
+                if index >= len(self.__data[key]) or \
+                   not self.__handle_filters(key, filters, kinds=["list"]):
+                    return False
+
+                if end:
+                    del self.__data[key][index:end]
+                else:
+                    del self.__data[key][index]
+                return self.__data[key]
+            else:
+                return None
