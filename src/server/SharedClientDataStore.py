@@ -51,7 +51,7 @@ class SharedClientDataStore:
                     return None
             elif val.startswith("\\#"):
                 # They actually wanted to start it with a pound for some reason...
-                return val[2:]
+                return val[1:]
             else:
                 return val
         except AttributeError:
