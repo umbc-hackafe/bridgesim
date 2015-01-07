@@ -66,7 +66,7 @@ $(function() {
 	}
     });
 
-    minimap = new Map($("#minimap")[0], {x: 0, y: 0}, {scale: 0.00005});
+    minimap = new Map($("#minimap")[0], {x: 0, y: 0}, {scale: 0.1});
     //minimap.drawBlip(500, 1000);
 
     // var mapcanvas = document.getElementById("minimap");
