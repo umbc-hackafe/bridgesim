@@ -42,6 +42,10 @@ class Root():
         return self.template('lobby.html')
 
     @cherrypy.expose
+    def minimap(self):
+        return self.template('minimap.html')
+
+    @cherrypy.expose
     def client(self):
         # you can access the class instance through
         handler = cherrypy.request.ws_handler
