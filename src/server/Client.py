@@ -1,7 +1,7 @@
 import uuid
 import random
 import traceback
-from ClientAPI import BaseContext, expose, readable
+from ClientAPI import expose, readable, autocontext
 
 ALL_KINDS = (
     "entity",
@@ -33,7 +33,8 @@ class Client:
                          "functions": lambda d: {cls:
                                                  {"readable": info["readable"],
                                                   "writable": info["writable"],
-                                                  "methods": [m for m in info["methods"]]}
+                                                  "methods": [m for m in info["methods"]],
+                                                  "context": isinstance(info["context"], type)}
                                                  for cls, info in self.api.getTable().items()}
         }
         self.closed = False
@@ -130,22 +131,8 @@ class Client:
         self.updates = {}
 
 @readable('universe')
+@autocontext(lambda c,g:c.updater)
 class ClientUpdater:
-    class Context(BaseContext):
-        def __init__(self, instance=None, serial=None):
-            if instance:
-                self.client = instance.client.id
-            elif serial:
-                _, self.client = serial
-            else:
-                raise Exception("Context must be given instance or serial")
-
-        def instance(self, global_context):
-            return global_context.network.clients[self.client].updater
-
-        def serialize(self):
-            return ("ClientUpdater", self.client)
-
     def __init__(self, universe, client):
         self.universe = universe
         self.client = client

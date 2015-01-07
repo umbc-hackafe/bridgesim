@@ -17,6 +17,13 @@ class GlobalContext:
         self.universes = universes
         self.network = network
 
+def autocontext(getter):
+    def decorator(cls):
+        if not hasattr(cls, "__api_auto__"):
+            setattr(cls, "__api_auto__", getter)
+        return cls
+    return decorator
+
 # ** Function Decorator **
 def expose(func=None, label=None, client=False):
     if func != None:
@@ -78,28 +85,26 @@ class ClientAPI:
         self.classes = {}
         self.globalContext = globalContext
 
-    def onGet(self, name, ctx):
+    def onGet(self, name, ctx, client=None):
         cls, attr = name.split(".")
         classInfo = self.classes[cls]
 
         if attr not in classInfo["readable"]:
             raise AttributeError("Attribute {} is not readable -- did you @readable it?".format(attr))
 
-        context = classInfo["context"]
-        instance = context(serial=ctx).instance(self.globalContext)
+        instance = self.get(ctx, cls, client)
 
         result = getattr(instance, attr, None)
         return {"result": result}
 
-    def onSet(self, name, ctx, value):
+    def onSet(self, name, ctx, value, client=None):
         cls, attr = name.split(".")
         classInfo = self.classes[cls]
 
         if attr not in classInfo["writable"]:
             raise AttributeError("Attribute {} is not writable -- did you @writable it?".format(attr))
 
-        context = classInfo["context"]
-        instance = context(serial=ctx).instance(self.globalContext)
+        instance = self.get(ctx, cls, client)
 
         setattr(instance, attr, value)
 
@@ -116,8 +121,7 @@ class ClientAPI:
         if func not in classInfo["methods"]:
             raise AttributeError("Method {} is not available -- did you @expose it?".format(func))
 
-        context = classInfo["context"]
-        instance = context(serial=ctx).instance(self.globalContext)
+        instance = self.get(ctx, cls, client)
 
         method = classInfo["methods"][func]["callable"]
         if classInfo["methods"][func]["pass_client"]:
@@ -126,12 +130,16 @@ class ClientAPI:
 
         return {"result": result}
 
-    def get(self, ctx):
-        cls = ctx[0]
+    def get(self, ctx, cls=None, client=None):
+        if not cls:
+            cls = ctx[0]
         classInfo = self.classes[cls]
 
         context = classInfo["context"]
-        instance = context(serial=ctx).instance(self.globalContext)
+        if isinstance(context, type):
+            instance = context(serial=ctx).instance(self.globalContext)
+        else:
+            instance = context(client, self.globalContext)
 
         return instance
 
@@ -139,10 +147,14 @@ class ClientAPI:
         return self.classes
 
     def register(self, cls):
-        if not hasattr(cls, "Context"):
-            raise AttributeError("Cannot register class {}; must have Context.".format(cls.__name__))
-        if not issubclass(cls.Context, BaseContext):
-            raise AttributeError("Cannot register class {}; Invalid Context.".format(cls.__name__))
+        if hasattr(cls, "__api_auto__"):
+            context = cls.__api_auto__
+        else:
+            if not hasattr(cls, "Context"):
+                raise AttributeError("Cannot register class {}; must have Context or @autocontext.".format(cls.__name__))
+            if not issubclass(cls.Context, BaseContext):
+                raise AttributeError("Cannot register class {}; Invalid Context.".format(cls.__name__))
+            context = cls.Context
 
         methods = {}
         for methname in dir(cls):
@@ -169,7 +181,7 @@ class ClientAPI:
 
         self.classes[cls.__name__] = {
             "class": cls,
-            "context": cls.Context,
+            "context": context,
             "methods": methods,
             "readable": readable,
             "writable": writable

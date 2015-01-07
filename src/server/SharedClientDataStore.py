@@ -1,11 +1,8 @@
 import threading
-from ClientAPI import BaseContext, expose
+from ClientAPI import expose, autocontext
 
+@autocontext(lambda c,g:g.network.store)
 class SharedClientDataStore:
-    class Context(BaseContext):
-        def instance(self, global_context):
-            return global_context.network.store
-
     LIST_FILTERS = {
         "len_lt": lambda l,v: len(l) < v,
         "len_gt": lambda l,v: len(l) > v,
