@@ -1,0 +1,25 @@
+{% extends "full_canvas_base.html" %}
+
+{% block header_includes %}
+  {% if config.DEBUG %}
+    {{ super() }}
+    <script src="{{ url_for("static", filename="js/map.js") }}"></script>
+    <script src="{{ url_for("static", filename="js/client.js") }}"></script>
+    <script src="{{ url_for("static", filename="js/minimap.js") }}"></script>
+    <link rel="stylesheet" href="{{ url_for("static", filename="css/index.css") }}" />
+  {% else %}
+    <script src="{{ url_for("static", filename="js/index.min.js") }}"></script>
+    <link rel="stylesheet" href="{{ url_for("static", filename="css/index.min.css") }}" />
+  {% endif %}
+{% endblock header_includes %}
+
+{% block overlay_body %}
+  <div id="minimap-container">
+    <canvas id="minimap" class="minimap"/></canvas><br/>
+    <!-- <button id="minimap-zoom-in">+</button> -->
+    <!-- <button id="minimap-zoom-out">-</button> -->
+  </div>
+  <input class="conn-required" type="text" id="result-text" placeholder="Test..."/>
+  <label><input class="conn-required" type="checkbox" id="update-enable"/>Receive Updates</label>
+  <label>Frequency: <input class="conn-required" type="number" id="update-freq" min="5" max="30" value="10"/></label>
+{% endblock overlay_body %}
