@@ -161,8 +161,9 @@ $(function() {
 	}
     });
 
-    minimap = new Map($("#minimap")[0], {x: 0, y: 0}, {scale: .1})
-    //minimap.drawBlip(500, 1000);
+    minimap = new Map($("#minimap")[0], {x: 0, y: 0},
+            {sizeX: 2000, sizeY: 2000})
+    minimap.drawBlip(0, 0, {color: 'white'}); // debug
 
     console.log(minimap.getSectorName(0,0,0));
     console.log(minimap.getSectorName(5000000,2000000,36000000));

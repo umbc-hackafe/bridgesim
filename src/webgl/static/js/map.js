@@ -40,43 +40,52 @@ function Map(canvas, anchor, options) {
 
     this.width = $(this.canvas).width();
     this.height = $(this.canvas).height();
+    this.halfWidth = this.width / 2;
+    this.halfHeight = this.height / 2;
 
     if (typeof anchor === "function") {
-	this.getAnchor = anchor;
+	    this.getAnchor = anchor;
     } else {
-	this.getAnchor = function() {
-	    return anchor;
-	}
+	    this.getAnchor = function() {
+	        return anchor;
+	    }
     }
 
+    // Retrieve the options for scaling, because they need to be used to
+    // determine the height and width.
     this.opts = {
-	borderColor: "#ffffff",
-	gridColor: "#003",
-	scale: 0.001 // 1px = 1km
+	    borderColor: "#ffffff",
+	    gridColor: "#003",
+	    scale: 1 // 1px = 1m
     };
 
     if (options)
-	$.extend(this.opts, options);
+	    $.extend(this.opts, options);
 
     if (this.opts.scale) {
-	this.scaleX = this.opts.scale;
-	this.scaleY = this.opts.scale;
+	    this.scaleX = this.opts.scale;
+	    this.scaleY = this.opts.scale;
     }
-
     if (this.opts.scaleX)
-	this.scaleX = this.opts.scaleX;
-
+	    this.scaleX = this.opts.scaleX;
     if (this.opts.scaleY)
-	this.scaleY = this.opts.scaleY;
+	    this.scaleY = this.opts.scaleY;
 
     if (this.opts.sizeX)
-	this.scaleX = this.width / this.opts.sizeX
-
+	    this.scaleX = this.width / this.opts.sizeX;
     if (this.opts.sizeY)
-	this.scaleY = this.height / this.opts.sizeY
+        this.scaleY = this.height / this.opts.sizeY;
 
-    console.log("Map initiated, contains [" + this.anchorX() + "," + this.anchorY()
-		+ "] to [" + (this.anchorX() + this.width) + "," + (this.anchorY() + this.height) + "]");
+
+
+    contains = [ this.cornerX(),
+                 this.cornerY(),
+                (this.cornerX() + this.width / this.scaleX),
+                (this.cornerY() + this.height / this.scaleY) ]
+
+    console.log("Map initiated, contains [" + contains[0] + "," +
+            contains[1] + "] to [" + contains[2] + "," + contains[3] +
+            "]");
 
     this.clear();
     this.drawLines();
@@ -161,9 +170,17 @@ Map.prototype.anchorY = function() {
     return this.getAnchor().y;
 }
 
+Map.prototype.cornerX = function() {
+    return (this.getAnchor().x - this.halfWidth) / this.scaleX;
+}
+
+Map.prototype.cornerY = function() {
+    return (this.getAnchor().y - this.halfHeight) / this.scaleY;
+}
+
 Map.prototype.getDisplayLocation = function(x, y) {
-    return {x: (x - this.anchorX()) * this.scaleX,
-	    y: (y - this.anchorY()) * this.scaleY};
+    return {x: (x - this.cornerX()) * this.scaleX,
+	    y: (y - this.cornerY()) * this.scaleY};
 }
 
 Map.prototype.isOnMap = function(x, y) {
