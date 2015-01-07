@@ -8,11 +8,11 @@ function identify(num, chars) {
     return r
 }
 
-// Set a sector of 1 megameter, because that's the best unit
+// Set a sector of 1 kilometer, because that's the best unit
 // 1 au = 149597871000m
-var sectorSizeX = 1000000;
-var sectorSizeY = 1000000;
-var sectorSizeZ = 1000000;
+var sectorSizeX = 1000;
+var sectorSizeY = 1000;
+var sectorSizeZ = 1000;
 
 var alpha = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 var num = "0123456789"
