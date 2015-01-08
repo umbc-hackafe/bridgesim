@@ -116,20 +116,6 @@ function registerWithServer() {
 	})});
 }
 
-function handleUpdates(data) {
-    console.log("Collecting updates");
-    if ("updates" in data && data["updates"]) {
-	    minimap.redraw();
-	    if ("entity" in data) {
-	        var entities = data["entity"];
-	        for (i in entities) {
-		        var entity = entities[i];
-		        minimap.drawBlip(entity.location[0], entity.location[1], {});
-	        }
-	    }
-    }
-}
-
 $(function() {
     $(".conn-required").prop("disabled", true);
 
@@ -153,8 +139,6 @@ $(function() {
 	console.log("Socket CLOSED!");
 	$(".conn-required").prop("disabled", true);
     });
-
-    window.client.socket.addOnMessage(handleUpdates);
 
     $("#test-btn").click(function() {
 	window.client.call("Ship__name", ["Ship", 0, 1], {callback: function(res) {
@@ -181,4 +165,7 @@ $(function() {
 
     console.log(minimap.getSectorName(0,0,0));
     console.log(minimap.getSectorName(5000000,2000000,36000000));
+
+    window.client.socket.addOnMessage(minimap.updateFromData);
+
 });

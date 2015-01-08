@@ -207,3 +207,15 @@ Map.prototype.zoom = function(scale) {
     console.log("Redrawing map with scales at " + 100 / scale + "%");
     this.redraw();
 }
+Map.prototype.updateFromData = function(data) {
+    if ("updates" in data && data["updates"]) {
+        minimap.redraw();
+        if ("entity" in data) {
+            var entities = data["entity"];
+            for (i in entities) {
+                var entity = entities[i];
+                minimap.drawBlip(entity.location[0], entity.location[1], {});
+            }
+        }
+    }
+}
