@@ -127,14 +127,14 @@ class Client:
             raise ClientClosedException()
         if self.updates:
             self.updates['updates'] = True
-            self.sender.send(self.updates, expand=True)
+            self.sender.send(self.updates)
         self.updates = {}
 
 @readable('universe')
 @autocontext(lambda c,g:c.updater)
 class ClientUpdater:
     def __init__(self, universe, client):
-        self.universe = universe
+        self.universes = [universe]
         self.client = client
         self.client.updater = self
 
