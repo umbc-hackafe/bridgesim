@@ -93,8 +93,8 @@ function Map(canvas, anchor, options) {
 }
 
 Map.prototype.clear = function() {
-    // Cheatily clear the canvas
-    $(this.canvas).width(this.width);
+    // Clear the whole canvas.
+    this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
 }
 
 Map.prototype.drawUI = function() {
@@ -110,31 +110,31 @@ Map.prototype.drawUI = function() {
 }
 
 Map.prototype.drawLines = function() {
-    var minSectorX = sectorSizeX * (Math.trunc(this.anchorX() / sectorSizeX));
-    var minSectorY = sectorSizeY * (Math.trunc(this.anchorY() / sectorSizeY));
-    var xLoc = this.getDisplayLocation(minSectorX, this.anchorY());
-    var yLoc = this.getDisplayLocation(this.anchorX(), minSectorY);
+    var minSectorX = sectorSizeX * (Math.trunc(this.cornerX() / sectorSizeX));
+    var minSectorY = sectorSizeY * (Math.trunc(this.cornerY() / sectorSizeY));
+    var xLoc = this.getDisplayLocation(minSectorX, this.cornerY());
+    var yLoc = this.getDisplayLocation(this.cornerX(), minSectorY);
 
     this.context.strokeStyle = this.opts.gridColor;
 
     while (yLoc.y <= this.height) {
-	if (this.isOnMap(this.anchorX(), minSectorY)) {
+	if (this.isOnMap(this.cornerX(), minSectorY)) {
 	    this.context.moveTo(0+.5, yLoc.y+.5);
 	    this.context.lineTo(this.width+.5, yLoc.y+.5);
 	    this.context.stroke();
 	}
 
 	while (xLoc.x <= this.width) {
-	    if (this.isOnMap(minSectorX, this.anchorY())) {
+	    if (this.isOnMap(minSectorX, this.cornerY())) {
 		this.context.moveTo(xLoc.x+.5, 0.5);
 		this.context.lineTo(xLoc.x+.5, this.height+.5);
 		this.context.stroke();
 	    }
 	    minSectorX += sectorSizeX;
-	    xLoc = this.getDisplayLocation(minSectorX, this.anchorY());
+	    xLoc = this.getDisplayLocation(minSectorX, this.cornerY());
 	}
 	minSectorY += sectorSizeY;
-	yLoc = this.getDisplayLocation(this.anchorX(), minSectorY);
+	yLoc = this.getDisplayLocation(this.cornerX(), minSectorY);
     }
 }
 
@@ -193,4 +193,15 @@ Map.prototype.getSectorName = function(x, y, z) {
     return identify(Math.trunc(x/sectorSizeX), greek) + 
 	identify(Math.trunc(y/sectorSizeY), num) +
 	identify(Math.trunc(z/sectorSizeZ), alpha);
+}
+
+Map.prototype.zoom = function(scale) {
+    this.scaleX = this.scaleX / scale;
+    this.scaleY = this.scaleY / scale;
+
+    // Redraw
+    console.log("Redrawing map with scales at " + 100 / scale + "%");
+    this.clear();
+    this.drawLines();
+    this.drawUI();
 }

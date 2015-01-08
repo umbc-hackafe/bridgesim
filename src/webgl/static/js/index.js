@@ -13,6 +13,13 @@ var windowHalfY = window.innerHeight / 2;
 $(document).ready(function() {
     init();
     animate();
+
+    $('#minimap-zoom-in').click(function() {
+        minimap.zoom(0.5);
+    });
+    $('#minimap-zoom-out').click(function() {
+        minimap.zoom(2);
+    });
 });
 
 
