@@ -27,7 +27,6 @@ def autocontext(getter):
 # ** Function Decorator **
 def expose(func=None, label=None, client=False):
     if func != None:
-        print("expose({}, label={}, client={})".format(func, label, client))
         if not label:
             label = func.__name__
         setattr(func, "__api_exposed__", True)

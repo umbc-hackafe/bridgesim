@@ -171,7 +171,6 @@ Client.prototype.proxyContexts = function(obj) {
 };
 
 Client.prototype.loadFunctions = function(map) {
-    console.log("Loading functions!!!");
     var client = this;
     this.cache = new ObjectCache(this, this.socket);
     this.proxyClasses = {};
@@ -184,21 +183,14 @@ Client.prototype.loadFunctions = function(map) {
 
 	this.cache.registerClass(className, readable, writable);
 
-
-	console.log("Doing", className);
-
 	var fffffffuuuuuuuuuuuu = function(className, readable, writable) {
 	    client.proxyClasses[className] = function(ctx) {
 		this.context = ctx;
 		var proxy = this;
 
-		console.log(className,"writable",writable);
-
 		for (var i in readable) {
-		    console.log("HEY", i);
 		    var attr = readable[i];
 		    var isWritable = writable.indexOf(attr) >= 0;
-		    console.log("this is ", this);
 		    Object.defineProperty(this, attr, {
 			get: function() { return client.cache.get(this.context, className, attr); },
 			set: function(val) { return isWritable ? proxy["__set_" + attr](val) : Error(attr + " is not writable"); }
@@ -250,7 +242,6 @@ Client.prototype.loadFunctions = function(map) {
 					    args: args,
 					    kwargs: kwargs,
 					    callback: function(data) {
-						console.log("RESOLVING");
 						resolve(client.proxyContexts(data.result));
 					    }
 					}
@@ -289,8 +280,6 @@ Client.prototype.call = function(name, context, extras) {
     }
     this.seq += 1;
     var tmpSeq = this.seq;
-    console.log("tmpSeq", tmpSeq);
-    console.log(this.seq);
     var rf = new RemoteFunction(this.socket, tmpSeq, name, callback, null, expand);
     var newArgs = [context, kwargs].concat(args);
     rf.call.apply(rf, newArgs);
@@ -315,8 +304,6 @@ function ObjectCache(client, socket) {
     this.socket = socket;
 
     this.states = {};
-
-    console.log("ObjectCache this should be ",this);
 
     // I have to do this
     // because
@@ -369,13 +356,11 @@ ObjectCache.prototype.registerClass = function(name, readable, writable){
 }
 
 ObjectCache.prototype.handleUpdates = function(data) {
-    console.log("ObjectCache this is actually",this);
     if ("updates" in data && data["updates"]) {
 	if ("entity" in data) {
 	    for (var k in data["entity"]) {
 		var entity = data["entity"][k];
 		var hash = hashContext(entity["context"]);
-		console.log(this);
 		this.states[hash.bucket][hash.key] = entity;
 	    }
 	}
