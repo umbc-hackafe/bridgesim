@@ -15,10 +15,10 @@ $(document).ready(function() {
     animate();
 
     $('#minimap-zoom-in').click(function() {
-        minimap.zoom(0.5);
+        minimap.zoomIn(2);
     });
     $('#minimap-zoom-out').click(function() {
-        minimap.zoom(2);
+        minimap.zoomIn(0.5);
     });
 });
 
