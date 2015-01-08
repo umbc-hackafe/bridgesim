@@ -57,9 +57,11 @@ ship1 = Ship.Ship(shipConf, universe)
 ship1.name = "Aggressor"
 ship2 = Ship.Ship(shipConf, universe)
 ship2.name = "Victim"
-ship1.location = physics.Vector(5000,1000,0)
-ship2.location = physics.Vector(1000,1000,0)
+ship1.location = physics.Vector(500,100,0)
+ship1.velocity = physics.Vector(-7,-7,0)
+ship2.location = physics.Vector(-400,1000,0)
 ship2.rotation = physics.Vector(0,0,0)
+ship2.velocity = physics.Vector(5,-20,0)
 universe.add(ship1)
 universe.add(ship2)
 
