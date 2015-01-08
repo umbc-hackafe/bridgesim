@@ -38,11 +38,6 @@ function Map(canvas, anchor, options) {
     this.canvas = canvas;
     this.context = canvas.getContext("2d");
 
-    this.width = $(this.canvas).width();
-    this.height = $(this.canvas).height();
-    this.halfWidth = this.width / 2;
-    this.halfHeight = this.height / 2;
-
     if (typeof anchor === "function") {
 	    this.getAnchor = anchor;
     } else {
@@ -56,38 +51,35 @@ function Map(canvas, anchor, options) {
     this.opts = {
 	    borderColor: "#ffffff",
 	    gridColor: "#003",
-	    scale: 1 // 1px = 1m
+	    sizeX: 2000, // X display width is 2000m
+	    sizeY: 2000  // Y display width is 2000m
     };
 
     if (options)
 	    $.extend(this.opts, options);
 
-    if (this.opts.scale) {
-	    this.scaleX = this.opts.scale;
-	    this.scaleY = this.opts.scale;
-    }
-    if (this.opts.scaleX)
-	    this.scaleX = this.opts.scaleX;
-    if (this.opts.scaleY)
-	    this.scaleY = this.opts.scaleY;
+    this.sizeX = this.opts.sizeX;
+    this.sizeY = this.opts.sizeY;
 
-    if (this.opts.sizeX)
-	    this.scaleX = this.width / this.opts.sizeX;
-    if (this.opts.sizeY)
-        this.scaleY = this.height / this.opts.sizeY;
+    this.rescale($(this.canvas).width(), $(this.canvas).height());
+    this.redraw();
+}
 
+Map.prototype.rescale = function(width, height) {
+    this.width = width;
+    this.height = height;
 
+    this.scaleX = this.width / this.sizeX;
+    this.scaleY = this.height / this.sizeY;
 
     contains = [ this.cornerX(),
                  this.cornerY(),
                 (this.cornerX() + this.width / this.scaleX),
                 (this.cornerY() + this.height / this.scaleY) ]
 
-    console.log("Map initiated, contains [" + contains[0] + "," +
+    console.log("Map rescaled, contains [" + contains[0] + "," +
             contains[1] + "] to [" + contains[2] + "," + contains[3] +
             "]");
-
-    this.redraw();
 }
 
 Map.prototype.redraw = function() {
@@ -175,11 +167,11 @@ Map.prototype.anchorY = function() {
 }
 
 Map.prototype.cornerX = function() {
-    return (this.getAnchor().x - this.halfWidth) / this.scaleX;
+    return (this.getAnchor().x - this.width/2) / this.scaleX;
 }
 
 Map.prototype.cornerY = function() {
-    return (this.getAnchor().y - this.halfHeight) / this.scaleY;
+    return (this.getAnchor().y - this.height/2) / this.scaleY;
 }
 
 Map.prototype.getDisplayLocation = function(x, y) {
@@ -199,12 +191,18 @@ Map.prototype.getSectorName = function(x, y, z) {
 	identify(Math.trunc(z/sectorSizeZ), alpha);
 }
 
-Map.prototype.zoom = function(scale) {
-    this.scaleX = this.scaleX / scale;
-    this.scaleY = this.scaleY / scale;
+Map.prototype.zoomIn = function(scale) {
+    // The "size" of the map decreases as you zoom in.
+    this.sizeX = this.sizeX / scale;
+    this.sizeY = this.sizeY / scale;
+
+    // Therefore, the scale of pixels to meters increases, because you
+    // have the same pixels to display fewer meters.
+    this.scaleX = this.scaleX * scale;
+    this.scaleY = this.scaleY * scale;
 
     // Redraw
-    console.log("Redrawing map with scales at " + 100 / scale + "%");
+    console.log("Redrawing map with zoomed at " + 100 * scale + "%");
     this.redraw();
 }
 Map.prototype.updateFromData = function(data) {
