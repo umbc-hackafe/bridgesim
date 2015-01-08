@@ -49,7 +49,25 @@ api.register(Component.ShieldGenerator)
 api.register(SharedClientDataStore.SharedClientDataStore)
 api.register(Client.ClientUpdater)
 
-print(api.getTable())
+table = api.getTable()
+print("==== Function Table ====")
+for clsName, info in table.items():
+  print()
+  print("Class: {}".format(clsName))
+  if not isinstance(info["context"], type):
+    print("  Global: client.${}".format(clsName))
+
+  if info["methods"]:
+    print("=== Methods ===")
+    for funcName in info["methods"]:
+      print("  * {}()".format(funcName))
+  if info["readable"]:
+    print("=== Attributes ===")
+    for attrName in info["readable"]:
+      if "writable" in info and attrName in info["writable"]:
+        print("  * {} (rw)".format(attrName))
+      else:
+        print("  * {} (r-)".format(attrName))
 
 network.start(api)
 
