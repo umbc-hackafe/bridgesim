@@ -130,8 +130,14 @@ RemoteFunction.prototype.call = function(context, kwargs) {
 
     this.socket.send(data);
     // All functions will have a 5 second timeout I guess
+    var rf = this;
     if (this.callback) {
-	this.timer = setTimeout(function() {console.log("Call (seq#" + theese.seq + ") timed out.");}, 5000);
+	this.timer = setTimeout(function() {
+	    console.log("Call (seq#" + theese.seq + ") timed out.");
+	    if (rf.timeoutCallback) {
+		rf.timeoutCallback();
+	    }
+	}, 5000);
     } else {
 	console.log("this.callback is not anything:");
 	console.log(this.callback);
@@ -142,8 +148,8 @@ function Client(host, port, path, doneCB) {
     this.id = null; // This will be updated when connection is successful
     this.socket = null;
     this.seq = Math.floor(Math.random() * 9007199254740992);
-    this.init(host, port, path);
     this.doneCB = doneCB;
+    this.init(host, port, path);
 }
 
 Client.prototype.init = function(host, port, path) {
@@ -157,7 +163,12 @@ Client.prototype.init = function(host, port, path) {
 		client.call("specials", null, {
 		    callback: function(data) {
 			client.loadSpecials(data.result);
-			if (client.doneCB) client.doneCB();
+			client.call("whoami", null, {
+			    callback: function(data) {
+				client.id = data.result;
+				if (client.doneCB) client.doneCB();
+			    }
+			});
 		    }
 		});
 	    }
@@ -201,12 +212,15 @@ Client.prototype.loadSpecials = function(list) {
 		    }
 		}
 
-		return new Promise(function(resolve) {
+		return new Promise(function(resolve, reject) {
 		    client.call(fName, null, {
 			args: args,
 			kwargs: kwargs,
 			callback: function(data) {
 			    resolve(client.proxyContexts(data.result));
+			},
+			timeout: function() {
+			    reject(Error("Call timed out"));
 			}
 		    });
 		});
@@ -286,7 +300,7 @@ Client.prototype.loadFunctions = function(map) {
 			    }
 			}
 
-			return new Promise(function(resolve) {
+			return new Promise(function(resolve, reject) {
 			    client.call(clsName + "__" + pName,
 					proxy.context,
 					{
@@ -294,6 +308,9 @@ Client.prototype.loadFunctions = function(map) {
 					    kwargs: kwargs,
 					    callback: function(data) {
 						resolve(client.proxyContexts(data.result));
+					    },
+					    timeout: function() {
+						reject(Error("Call timed out"));
 					    }
 					}
 				       );
@@ -319,16 +336,17 @@ Client.prototype.call = function(name, context, extras) {
     //             callback: function(data) {alert(data.result);}
     //           }
     // );
-    var args = [], kwargs = {}, callback;
+    var args = [], kwargs = {}, callback, timeout = null;
     var expand = false;
     if (extras && 'args' in extras) args = extras.args;
     if (extras && 'kwargs' in extras) kwargs = extras.kwargs;
     if (extras && 'callback' in extras) callback = extras.callback;
     if (extras && 'expand' in extras) expand = extras['expand'];
+    if (extras && 'timeout' in extras) timeout = extras['timeout'];
 
     this.seq += 1;
     var tmpSeq = this.seq;
-    var rf = new RemoteFunction(this.socket, tmpSeq, name, callback, null, expand);
+    var rf = new RemoteFunction(this.socket, tmpSeq, name, callback, timeout, expand);
     var newArgs = [context, kwargs].concat(args);
     rf.call.apply(rf, newArgs);
 };
