@@ -20,24 +20,9 @@ function registerWithServer() {
 	})});
 }
 
-function handleUpdates(data) {
-    if ("updates" in data && data["updates"]) {
-	minimap.clear();
-	if ("entity" in data) {
-	    var entities = data["entity"];
-	    for (i in entities) {
-		var entity = entities[i];
-		minimap.drawBlip(entity.location[0], entity.location[1], {});
-	    }
-	}
-    }
-}
-
-$(function() {
-    $(".conn-required").prop("disabled", true);
-
-    window.client = new Client(location.hostname, 9000, "/client");
+function initClient() {
     //window.client.init(location.hostname, 9000, "/client");
+    window.client.$ClientUpdater.requestUpdates("entity", 10)
 
     window.client.socket.addOnOpen(function(evt) {
 	console.log("WebSocket is open!"); registerWithServer();
@@ -52,24 +37,20 @@ $(function() {
 
     window.client.socket.addOnClose(function(evt) {
 	console.log("Socket CLOSED!");
-	$(".conn-required").prop("disabled", true);
+	    $(".conn-required").prop("disabled", true);
     });
 
-    window.client.socket.addOnMessage(handleUpdates);
+    window.client.socket.addOnMessage(minimap.updateFromData);
+}
 
-    $("#update-enable").change(function() {
-	window.client.call("ClientUpdater__requestUpdates", ["ClientUpdater", 0], {args: ["entity", this.checked ? parseInt($("#update-freq").val()) : 0]});
-    });
-    $("#update-freq").change(function() {
-	if ($("#update-enable").prop("checked")) {
-	    window.client.call("ClientUpdater__requestUpdates", ["ClientUpdater", 0], {args: ["entity", parseInt($(this).val())]});
-	}
-    });
+$(function() {
+    $(".conn-required").prop("disabled", true);
 
-    minimap = new Map($("#minimap")[0], {x: 0, y: 0}, {scale: 0.1});
+    window.client = new Client(location.hostname, 9000, "/client", initClient);
+
+    minimap = new Map($("#minimap")[0], {x: 0, y: 0}, {sizeX: 2000,
+        sizeY: 2000}) ;
     //minimap.drawBlip(500, 1000);
-
-    // var mapcanvas = document.getElementById("minimap");
 
     // mapcanvas.width  = window.innerWidth;
     // mapcanvas.height = window.innerHeight;
