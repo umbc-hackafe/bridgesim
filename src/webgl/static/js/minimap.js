@@ -45,7 +45,8 @@ function initClient() {
 	    $(".conn-required").prop("disabled", true);
     });
 
-    window.client.socket.addOnMessage(minimap.updateFromData);
+    window.client.socket.addOnMessage(function(data)
+            {minimap.updateFromData(data);});
 }
 
 $(function() {

@@ -37,12 +37,14 @@ var greek = "\x03b1\x03b2\x03b3\x03b4\x03b5\x03b6\x03b7\x03b8\x03b9\x03ba\x03bb\
 function Map(canvas, anchor, options) {
     this.canvas = canvas;
     this.context = canvas.getContext("2d");
+    this.anchor = anchor;
+    this.targetid = -1;
 
     if (typeof anchor === "function") {
-	    this.getAnchor = anchor;
+	    this.getAnchor = this.anchor;
     } else {
 	    this.getAnchor = function() {
-	        return anchor;
+	        return this.anchor;
 	    }
     }
 
@@ -157,6 +159,10 @@ Map.prototype.drawBlip = function(x, y, options) {
     }
 }
 
+Map.prototype.anchorTarget = function(targetid) {
+    this.targetid = targetid;
+}
+
 // Shortcuts!
 Map.prototype.anchorX = function() {
     return this.getAnchor().x;
@@ -205,6 +211,7 @@ Map.prototype.zoomIn = function(scale) {
     console.log("Redrawing map with zoomed at " + 100 * scale + "%");
     this.redraw();
 }
+
 Map.prototype.updateFromData = function(data) {
     if ("updates" in data && data["updates"]) {
         minimap.redraw();
@@ -212,7 +219,17 @@ Map.prototype.updateFromData = function(data) {
             var entities = data["entity"];
             for (i in entities) {
                 var entity = entities[i];
-                minimap.drawBlip(entity.location[0], entity.location[1], {});
+                var properties = {};
+                if (entity.context[0] == "Ship") {
+                    if (entity.id == this.targetid) {
+                        this.anchor.x = entity.location[0];
+                        this.anchor.y = entity.location[1];
+                        this.anchor.z = entity.location[2];
+                        properties["color"] = "#AAAAAA";
+                    }
+                }
+                minimap.drawBlip(entity.location[0],
+                        entity.location[1], properties);
             }
         }
     }

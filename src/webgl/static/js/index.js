@@ -166,6 +166,7 @@ $(function() {
     console.log(minimap.getSectorName(0,0,0));
     console.log(minimap.getSectorName(5000000,2000000,36000000));
 
-    window.client.socket.addOnMessage(minimap.updateFromData);
+    window.client.socket.addOnMessage(function(data)
+            {minimap.updateFromData(data);});
 
 });
