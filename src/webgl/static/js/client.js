@@ -185,7 +185,7 @@ Client.prototype.loadFunctions = function(map) {
 
 	console.log("Doing", className);
 
-	var fffffffuuuuuuuuuuuu = function(className) {
+	var fffffffuuuuuuuuuuuu = function(className, readable, writable) {
 	    client.proxyClasses[className] = function(ctx) {
 		this.context = ctx;
 		var proxy = this;
@@ -205,7 +205,7 @@ Client.prototype.loadFunctions = function(map) {
 	    };
 	};
 	// I assure you this name is quite appropriate
-	fffffffuuuuuuuuuuuu(className);
+	fffffffuuuuuuuuuuuu(className, readable, writable);
 
 	var types = {};
 	for (var i in methods) {
@@ -248,8 +248,8 @@ Client.prototype.loadFunctions = function(map) {
 					    args: args,
 					    kwargs: kwargs,
 					    callback: function(data) {
-						client.proxyContexts(data.result);
-						resolve(data.result);
+						console.log("RESOLVING");
+						resolve(client.proxyContexts(data.result));
 					    }
 					}
 				       );
