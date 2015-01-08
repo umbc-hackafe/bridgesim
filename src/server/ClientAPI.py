@@ -146,6 +146,24 @@ class ClientAPI:
     def getTable(self):
         return self.classes
 
+    def expand(self, obj):
+        """
+        Expands an object to expose all its top-level attributes, leaving
+        primitives as is and turning Context-having objects into their
+        context's primitive (e.g., ["Entity",1,0)]). This prevents
+        having recursive objects.
+        """
+
+        if hasattr(obj, "__api_readable__"):
+            result = {
+                k: getattr(obj, k) for k in obj.__api_readable__
+                }
+            if hasattr(obj, "Context"):
+                result.update({"context": obj.Context(instance=obj).serialized()})
+        else:
+            result = obj
+        return result
+
     def register(self, cls):
         if hasattr(cls, "__api_auto__"):
             context = cls.__api_auto__

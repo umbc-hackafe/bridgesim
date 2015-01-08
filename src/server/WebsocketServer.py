@@ -135,7 +135,7 @@ class ClientHandler(WebSocket):
     def send(self, data, expand=False):
         encoder=ContextEncoder
         if expand:
-            encoder=ExpansionEncoder
+            data = ClientHandler.api.expand(data)
         try:
             encodeddata = json.dumps(data, cls=encoder, separators=(',',':')).encode('UTF-8')
             super().send(encodeddata)

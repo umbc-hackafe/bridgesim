@@ -167,7 +167,7 @@ class ClientUpdater:
             if kind == "entity":
                 for universe in self.universes:
                     for entity in universe.entities.values():
-                        self.client.queueUpdate(kind, entity)
+                        self.client.queueUpdate(kind, self.client.api.expand(entity))
             elif kind == "comms":
                 pass
             elif kind == "weapons":
