@@ -343,9 +343,9 @@ ObjectCache.prototype.get = function(context, cls, attr) {
     }
 
     if (hash.bucket in this.states) {
-	if (hash.key in this.states[hash.bucket]) {
+	if ((hash.key + "." + attr) in this.states[hash.bucket]) {
 	    return new Promise(function(resolve) {
-		resolve(that.client.proxyContexts(that.states[hash.bucket][hash.key]));
+		resolve(that.client.proxyContexts(that.states[hash.bucket][hash.key + "." + attr]));
 	    });
 	}
     }
@@ -353,6 +353,7 @@ ObjectCache.prototype.get = function(context, cls, attr) {
     return new Promise(function(resolve) {
 	that.client.call(cls + "__" + attr, context, {
 	    callback: function(data) {
+		that.states[hash.bucket][hash.key + "." + attr] = data.result;
 		resolve(that.client.proxyContexts(data.result));
 	    }
 	});
