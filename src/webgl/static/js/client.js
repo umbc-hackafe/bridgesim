@@ -159,13 +159,15 @@ Client.prototype.init = function(host, port, path) {
 };
 
 Client.prototype.proxyContexts = function(obj) {
-    for (var k in obj) {
-	if ("context" in obj[k] && obj[k].context != null) {
-	    obj[k] = new this.proxyClasses[obj[k].context[0]]();
+    var created = JSON.parse(JSON.stringify(obj));
+    for (var k in created) {
+	if (k == "context" && created.context != null) {
+	    return new this.proxyClasses[created.context[0]](created.context);
 	} else {
-	    obj[k] = this.proxyContexts(obj[k]);
+	    created[k] = this.proxyContexts(created[k]);
 	}
     }
+    return created;
 };
 
 Client.prototype.loadFunctions = function(map) {
@@ -334,6 +336,7 @@ function ObjectCache(client, socket) {
 
 ObjectCache.prototype.get = function(context, cls, attr) {
     var hash = hashContext(context);
+    var that = this;
 
     if (hash == 0) {
 	hash = {bucket: cls, key: 0};
@@ -341,15 +344,16 @@ ObjectCache.prototype.get = function(context, cls, attr) {
 
     if (hash.bucket in this.states) {
 	if (hash.key in this.states[hash.bucket]) {
-	    return this.states[hash.bucket][hash.key];
+	    return new Promise(function(resolve) {
+		resolve(that.client.proxyContexts(that.states[hash.bucket][hash.key]));
+	    });
 	}
     }
 
-    var that = this;
     return new Promise(function(resolve) {
 	that.client.call(cls + "__" + attr, context, {
 	    callback: function(data) {
-		resolve(data.result);
+		resolve(that.client.proxyContexts(data.result));
 	    }
 	});
     });
