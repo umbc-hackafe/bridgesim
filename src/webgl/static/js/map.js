@@ -167,11 +167,11 @@ Map.prototype.anchorY = function() {
 }
 
 Map.prototype.cornerX = function() {
-    return (this.getAnchor().x - this.width/2) / this.scaleX;
+    return (this.anchorX() - this.width / (2 * this.scaleX));
 }
 
 Map.prototype.cornerY = function() {
-    return (this.getAnchor().y - this.height/2) / this.scaleY;
+    return (this.anchorY() - this.height / (2 * this.scaleY));
 }
 
 Map.prototype.getDisplayLocation = function(x, y) {
