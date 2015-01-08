@@ -59,7 +59,9 @@ class VectorEncoder(json.JSONEncoder):
 class ContextEncoder(VectorEncoder):
     def default(self, obj):
         if hasattr(obj, 'Context'):
-            return list(obj.Context(instance=obj).serialized())
+            return {"context": list(obj.Context(instance=obj).serialized())}
+        elif hasattr(obj, '__api_auto__'):
+            return {"context": [obj.__name__]}
         return VectorEncoder.default(self, obj)
 
 class ExpansionEncoder(ContextEncoder):

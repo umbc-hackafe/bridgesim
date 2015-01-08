@@ -84,7 +84,7 @@ class Client:
                         # handle getting properties
                         elif funcName in info["readable"] and len(data["args"]) == 0:
                             result = self.api.onGet(clsName + "." + funcName,
-                                                    context, *args, **kwargs)
+                                                    context, *args, client=self, **kwargs)
                             print("Client got {} of class {}".format(funcName, clsName))
                         # unavailable function?
                         else:
@@ -130,7 +130,7 @@ class Client:
             self.sender.send(self.updates)
         self.updates = {}
 
-@readable('universe')
+@readable('universes')
 @autocontext(lambda c,g:c.updater)
 class ClientUpdater:
     def __init__(self, universe, client):

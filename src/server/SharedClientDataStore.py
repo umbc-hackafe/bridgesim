@@ -1,7 +1,8 @@
 import threading
-from ClientAPI import expose, autocontext
+from ClientAPI import expose, autocontext, readable
 
 @autocontext(lambda c,g:g.network.store)
+@readable("data")
 class SharedClientDataStore:
     LIST_FILTERS = {
         "len_lt": lambda l,v: len(l) < v,
@@ -29,7 +30,7 @@ class SharedClientDataStore:
     }
 
     def __init__(self, server):
-        self.__data = {}
+        self.data = {}
         self.readonly = []
         self.__updates = {}
         self.__clients = set()
@@ -37,13 +38,13 @@ class SharedClientDataStore:
         self.lock = threading.Lock()
 
     def __get(self, key):
-        return self.__data[key]
+        return self.data[key]
 
     def __val(self, val):
         try:
             if val.startswith("#"):
-                if val[1:] in self.__data:
-                    return self.__data[val[1:]]
+                if val[1:] in self.data:
+                    return self.data[val[1:]]
                 else:
                     return None
             elif val.startswith("\\#"):
@@ -63,15 +64,15 @@ class SharedClientDataStore:
             for f_name, f_val in filters.items():
                 try:
                     if "scalar" in kinds and f_name in self.SCALAR_FILTERS:
-                        if not self.SCALAR_FILTERS[f_name](self.__data[key], self.__val(f_val)):
+                        if not self.SCALAR_FILTERS[f_name](self.data[key], self.__val(f_val)):
                             return False
                     if "list" in kinds and f_name in self.LIST_FILTERS:
-                        if not self.LIST_FILTERS[f_name](self.__data[key], self.__val(f_val)):
+                        if not self.LIST_FILTERS[f_name](self.data[key], self.__val(f_val)):
                             return False
                     if "key" in kinds and f_name in self.KEY_FILTERS:
-                        if not self.KEY_FILTERS[f_name](self.__data, key, self.__val(f_val)):
+                        if not self.KEY_FILTERS[f_name](self.data, key, self.__val(f_val)):
                             return False
-                    # Assume key is in self.__data because it
+                    # Assume key is in self.data because it
                     # really should be, parent should check
                 except TypeError:
                     # We'll consider this to mean that we tried to
@@ -85,7 +86,7 @@ class SharedClientDataStore:
     def get_updates(self, client):
         if client.id not in self.__updates:
             return []
-        return [{key: self.__data[key]} for key in self.__updates[client.id]]
+        return [{key: self.data[key]} for key in self.__updates[client.id]]
 
     def queue_updates(self, key, caller):
         """
@@ -108,8 +109,8 @@ class SharedClientDataStore:
         """
         if caller.id not in self.__updates:
             self.__updates[caller.id] = set()
-        if caller.id not in self.__clients:
-            self.__clients.add(caller.id)
+            if caller.id not in self.__clients:
+                self.__clients.add(caller.id)
 
         if key is None:
             # do all of them
@@ -120,9 +121,9 @@ class SharedClientDataStore:
     @expose(client=True)
     def get(self, key, default=None, client=None):
         with self.lock:
-            if key in self.__data:
+            if key in self.data:
                 self.dequeue_update(key, client)
-                return self.__data[key]
+                return self.data[key]
             else:
                 return default
 
@@ -130,9 +131,9 @@ class SharedClientDataStore:
     def get_or_set_default(self, key, default, ro=False, client=None):
         val = self.get(key, default)
         with self.lock:
-            if key not in self.__data:
+            if key not in self.data:
                 self.queue_updates(key, client)
-                self.__data[key] = val
+                self.data[key] = val
                 if ro:
                     self.readonly.append(key)
         self.dequeue_update(key, client)
@@ -142,11 +143,11 @@ class SharedClientDataStore:
     def set(self, key, value, ro=False, client=None, **filters):
         with self.lock:
             if not self.__handle_filters(key, filters, kinds=["key"]):
-                return (False, self.__data[key] if key in self.__data else None)
+                return (False, self.data[key] if key in self.data else None)
 
-            if key in self.__data:
+            if key in self.data:
                 if key not in self.readonly and self.__handle_filters(key, filters, kinds=["scalar"]):
-                    self.__data[key] = value
+                    self.data[key] = value
                     self.queue_updates(key, client)
                     if ro:
                         self.readonly.append(key)
@@ -161,62 +162,62 @@ class SharedClientDataStore:
     def list_append(self, key, value=None, values=None, client=None, **filters):
         with self.lock:
             if not self.__handle_filters(key, filters, kinds=["key"]):
-                return (False, self.__data[key] if key in self.__data else None)
+                return (False, self.data[key] if key in self.data else None)
 
-            if key not in self.__data:
+            if key not in self.data:
                 if value:
-                    self.__data[key] = [value]
+                    self.data[key] = [value]
                 elif values:
-                    self.__data[key] = list(values)
+                    self.data[key] = list(values)
                 else:
-                    self.__data[key] = []
+                    self.data[key] = []
                 self.queue_updates(key, client)
-                return (True, self.__data[key])
+                return (True, self.data[key])
             else:
                 if not self.__handle_filters(key, filters, kinds=["list"]):
-                    return (False, self.__data[key])
+                    return (False, self.data[key])
 
                 if key not in self.readonly:
                     try:
                         if value:
-                            self.__data[key].append(value)
+                            self.data[key].append(value)
                         elif values:
-                            self.__data[key].extend(values)
+                            self.data[key].extend(values)
                         else:
                             pass
                         self.queue_updates(key, client)
-                        return (True, self.__data[key])
+                        return (True, self.data[key])
                     except TypeError:
-                        return (False, self.__data[key])
+                        return (False, self.data[key])
                 else:
-                    return (False, self.__data[key])
+                    return (False, self.data[key])
 
     @expose(client=True)
     def list_set(self, key, index, value, client=None, **filters):
         with self.lock:
             if not self.__handle_filters(key, filters, kinds=["key"]):
                 return (False, None)
-            if key in self.__data:
+            if key in self.data:
                 if not self.__handle_filters(key, filters, kinds=["list"]):
-                    return (False, self.__data[key][index] if index < len(self.__data[key]) else None)
+                    return (False, self.data[key][index] if index < len(self.data[key]) else None)
 
                 if key not in self.readonly:
-                    if index == len(self.__data[key]):
+                    if index == len(self.data[key]):
                         # Shortcut for append because we're nice
-                        self.__data[key].append(value)
-                    elif index < len(self.__data[key]):
-                        self.__data[key][index] = value
+                        self.data[key].append(value)
+                    elif index < len(self.data[key]):
+                        self.data[key][index] = value
                     else:
                         return (False, None)
                     self.queue_updates(key, client)
-                    return (True, self.__data[key][index])
+                    return (True, self.data[key][index])
                 else:
                     return (False, None)
             else:
                 # Make the thing if it doesn't exist because we're so nice
-                self.__data[key] = [value]
+                self.data[key] = [value]
                 self.queue_updates(key, client)
-                return (True, self.__data[key][index])
+                return (True, self.data[key][index])
 
     @expose(client=True)
     def list_get(self, key, index, slice_index=False, default=None, client=None):
@@ -234,17 +235,17 @@ class SharedClientDataStore:
         default value.
         """
         with self.lock:
-            if key in self.__data:
+            if key in self.data:
                 if index != None and slice_index is False:
                     try:
-                        return self.__data[key][index]
+                        return self.data[key][index]
                     except IndexError:
                         return default
                 elif slice_index != False:
                     if index is None:
                         index = 0
                     self.dequeue_update(key, client)
-                    return self.__data[key][index:slice_index]
+                    return self.data[key][index:slice_index]
                 elif index != None and slice_index is None:
                     self.dequeue_update(key, client)
                     return self.data[key][index:]
@@ -257,10 +258,10 @@ class SharedClientDataStore:
             if not self.__handle_filters(key, filters, kinds=["key"]):
                 return False
 
-            if key in self.__data:
+            if key in self.data:
                 if not self.__handle_filters(key, filters, kinds=["list"]):
                     return False
-                del self.__data[key]
+                del self.data[key]
                 self.queue_updates(key, client)
                 return True
             else:
@@ -275,22 +276,22 @@ class SharedClientDataStore:
         with self.lock:
             if not self.__handle_filters(key, filters, kinds=["key"]):
                 return False
-            if key in self.__data:
+            if key in self.data:
                 if value != None:
                     try:
-                        index = self.__data[key].index(value)
+                        index = self.data[key].index(value)
                     except ValueError:
                         return False
 
-                if index >= len(self.__data[key]) or \
+                if index >= len(self.data[key]) or \
                    not self.__handle_filters(key, filters, kinds=["list"]):
                     return False
 
                 if end:
-                    del self.__data[key][index:end]
+                    del self.data[key][index:end]
                 else:
-                    del self.__data[key][index]
+                    del self.data[key][index]
                 self.queue_updates(key, client)
-                return self.__data[key]
+                return self.data[key]
             else:
                 return None

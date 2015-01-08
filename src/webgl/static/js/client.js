@@ -148,7 +148,124 @@ function Client(host, port, path) {
 Client.prototype.init = function(host, port, path) {
     if (this.socket) this.socket.close();
     this.socket = new SocketWrapper(new WebSocket("ws://" + host + ":" + port + (path[0] == "/" ? path : "/" + path)));
+    var client = this;
+    this.socket.addOnOpen(function() {
+	client.call("functions", null, {
+	    callback: function(data) {
+		client.loadFunctions(data.result);
+	    }
+	});
+    });
 };
+
+Client.prototype.proxyContexts = function(obj) {
+    for (var k in obj) {
+	if ("context" in obj[k] && obj[k].context != null) {
+	    obj[k] = new this.proxyClasses[obj[k].context[0]]();
+	} else {
+	    obj[k] = this.proxyContexts(obj[k]);
+	}
+    }
+};
+
+Client.prototype.loadFunctions = function(map) {
+    console.log("Loading functions!!!");
+    var client = this;
+    this.cache = new ObjectCache(this, this.socket);
+    this.proxyClasses = {};
+
+    for (var className in map) {
+	var readable = map[className]["readable"];
+	var writable = map[className]["writable"];
+	var methods = map[className]["methods"];
+	var isGlobal = !map[className]["context"];
+
+	this.cache.registerClass(className, readable, writable);
+
+
+	console.log("Doing", className);
+
+	var fffffffuuuuuuuuuuuu = function(className) {
+	    client.proxyClasses[className] = function(ctx) {
+		this.context = ctx;
+		var proxy = this;
+
+		console.log(className,"writable",writable);
+
+		for (var i in readable) {
+		    console.log("HEY", i);
+		    var attr = readable[i];
+		    var isWritable = writable.indexOf(attr) >= 0;
+		    console.log("this is ", this);
+		    Object.defineProperty(this, attr, {
+			get: function() { return client.cache.get(this.context, className, attr); },
+			set: function(val) { return isWritable ? proxy["__set_" + attr](val) : Error(attr + " is not writable"); }
+		    });
+		}
+	    };
+	};
+	// I assure you this name is quite appropriate
+	fffffffuuuuuuuuuuuu(className);
+
+	var types = {};
+	for (var i in methods) {
+	    types[methods[i]] = "method";
+	}
+
+	for (var i in writable) {
+	    types[writable[i]] = "writable";
+	}
+	var methodsAndWritable = methods.concat(writable);
+
+	for (var i in methodsAndWritable) {
+	    var prop;
+	    if (types[methodsAndWritable[i]] == "writable") {
+		prop = "__set_" + methodsAndWritable[i];
+	    } else {
+		prop = methodsAndWritable[i];
+	    }
+
+	    // Did I mention...
+	    var f = function(clsName, pName) {
+		client.proxyClasses[clsName].prototype[pName] =
+		    function() {
+			var proxy = this;
+			var args = [].slice.call(arguments);
+			var len = args.length;
+			var kwargs = {};
+			if (len > 0) {
+			    if (typeof args[len-1] === 'object') {
+				kwargs = args[len-1];
+				len--;
+				args = args.slice(0,-1);
+			    }
+			}
+
+			return new Promise(function(resolve) {
+			    client.call(clsName + "__" + pName,
+					proxy.context,
+					{
+					    args: args,
+					    kwargs: kwargs,
+					    callback: function(data) {
+						client.proxyContexts(data.result);
+						resolve(data.result);
+					    }
+					}
+				       );
+			});
+		    };
+	    };
+
+	    // ... how much I hate Javascript?
+	    f(className, prop);
+	}
+
+	if (isGlobal) {
+	    client['$' + className] =  new client.proxyClasses[className](null);
+	}
+    }
+}
 
 Client.prototype.call = function(name, context, extras) {
     // Extras should be an object, e.g.:
@@ -180,4 +297,89 @@ Client.prototype.call = function(name, context, extras) {
 Client.prototype.quit = function() {
     console.log("Quitting");
     this.socket.close();
+}
+
+function hashContext(context) {
+    if (context) {
+	return {bucket: context[0],
+		key: context.slice(1).join(".")};
+    } else {
+	return 0;
+    }
+}
+
+function ObjectCache(client, socket) {
+    this.client = client;
+    this.socket = socket;
+
+    this.states = {};
+
+    console.log("ObjectCache this should be ",this);
+
+    // I have to do this
+    // because
+    // if I don't
+    // handleUpdates gets a 'this'
+    // which is... a sparse array?
+    // with [0: some random function]
+    // and sometimes [4: some random function]
+    // depending on when it gets called
+    // because
+    // like
+    // that makes sense
+    // right?
+    var that = this;
+    socket.addOnMessage(function(data) {that.handleUpdates(data);});
+}
+
+ObjectCache.prototype.get = function(context, cls, attr) {
+    var hash = hashContext(context);
+
+    if (hash == 0) {
+	hash = {bucket: cls, key: 0};
+    }
+
+    if (hash.bucket in this.states) {
+	if (hash.key in this.states[hash.bucket]) {
+	    return this.states[hash.bucket][hash.key];
+	}
+    }
+
+    var that = this;
+    return new Promise(function(resolve) {
+	that.client.call(cls + "__" + attr, context, {
+	    callback: function(data) {
+		resolve(data.result);
+	    }
+	});
+    });
+}
+
+ObjectCache.prototype.registerClass = function(name, readable, writable){ 
+    this.states[name] = {};
+    for (var i in readable) {
+	var attr = readable[i];
+	this.states[name][attr] = null;
+    }
+}
+
+ObjectCache.prototype.handleUpdates = function(data) {
+    console.log("ObjectCache this is actually",this);
+    if ("updates" in data && data["updates"]) {
+	if ("entity" in data) {
+	    for (var k in data["entity"]) {
+		var entity = data["entity"][k];
+		var hash = hashContext(entity["context"]);
+		console.log(this);
+		this.states[hash.bucket][hash.key] = entity;
+	    }
+	}
+
+	if ("store" in data) {
+	    for (var i in data["store"]) {
+		var update = data["store"][i];
+		$.extend(this.states["SharedClientDataStore"][0]["data"], update);
+	    }
+	}
+    }
 }
