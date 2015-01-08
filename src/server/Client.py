@@ -45,12 +45,6 @@ class Client:
         self.sender.listeners.append(self.dataReceived)
         self.closed = False
 
-#        <op name>: {
-#            "function": <function pointer>,
-#            "args": <predefined arguments list>,
-#            "kwargs": <predefined kwargs dictionary>
-#        }
-
     def dataReceived(self, data):
         if self.closed:
             raise ClientClosedException()

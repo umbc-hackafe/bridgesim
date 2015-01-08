@@ -192,8 +192,13 @@ Client.prototype.loadFunctions = function(map) {
 		    var attr = readable[i];
 		    var isWritable = writable.indexOf(attr) >= 0;
 		    Object.defineProperty(this, attr, {
-			get: function() { return client.cache.get(this.context, className, attr); },
-			set: function(val) { return isWritable ? proxy["__set_" + attr](val) : Error(attr + " is not writable"); }
+			get: function() {
+			    var res = client.cache.get(this.context, className, attr);
+			    return res;
+			},
+			set: function(val) {
+			    return isWritable ? proxy["__set_" + attr](val) : Error(attr + " is not writable");
+			}
 		    });
 		}
 	    };
@@ -272,12 +277,9 @@ Client.prototype.call = function(name, context, extras) {
     var expand = false;
     if (extras && 'args' in extras) args = extras.args;
     if (extras && 'kwargs' in extras) kwargs = extras.kwargs;
-    if (extras && 'callback' in extras) {
-	callback = extras.callback;
-    }
-    if (extras && 'expand' in extras) {
-	    expand = extras['expand'];
-    }
+    if (extras && 'callback' in extras) callback = extras.callback;
+    if (extras && 'expand' in extras) expand = extras['expand'];
+
     this.seq += 1;
     var tmpSeq = this.seq;
     var rf = new RemoteFunction(this.socket, tmpSeq, name, callback, null, expand);
