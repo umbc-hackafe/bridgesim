@@ -35,8 +35,9 @@ class Client:
                                                   "writable": info["writable"],
                                                   "methods": [m for m in info["methods"]],
                                                   "context": isinstance(info["context"], type)}
-                                                 for cls, info in self.api.getTable().items()}
-        }
+                                                 for cls, info in self.api.getTable().items()},
+                         "specials": lambda d: list(self.specials.keys()),
+                     }
         self.closed = False
 
     def reinit(self, sender):

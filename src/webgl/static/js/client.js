@@ -138,11 +138,12 @@ RemoteFunction.prototype.call = function(context, kwargs) {
     }
 }
 
-function Client(host, port, path) {
+function Client(host, port, path, doneCB) {
     this.id = null; // This will be updated when connection is successful
     this.socket = null;
     this.seq = Math.floor(Math.random() * 9007199254740992);
     this.init(host, port, path);
+    this.doneCB = doneCB;
 }
 
 Client.prototype.init = function(host, port, path) {
@@ -153,6 +154,12 @@ Client.prototype.init = function(host, port, path) {
 	client.call("functions", null, {
 	    callback: function(data) {
 		client.loadFunctions(data.result);
+		client.call("specials", null, {
+		    callback: function(data) {
+			client.loadSpecials(data.result);
+			if (client.doneCB) client.doneCB();
+		    }
+		});
 	    }
 	});
     });
@@ -168,6 +175,40 @@ Client.prototype.proxyContexts = function(obj) {
 	}
     }
     return created;
+};
+
+Client.prototype.loadSpecials = function(list) {
+    var client = this;
+    client["$Specials"] = {};
+    for (var k in list) {
+	var fName = list[k];
+	var f = function(fName) {
+	    client.$Specials[fName] = function() {
+		var proxy = this;
+		var args = [].slice.call(arguments);
+		var len = args.length;
+		var kwargs = {};
+		if (len > 0) {
+		    if (typeof args[len-1] === 'object') {
+			kwargs = args[len-1];
+			len--;
+			args = args.slice(0,-1);
+		    }
+		}
+
+		return new Promise(function(resolve) {
+		    client.call(fName, null, {
+			args: args,
+			kwargs: kwargs,
+			callback: function(data) {
+			    resolve(client.proxyContexts(data.result));
+			}
+		    });
+		});
+	    };
+	};
+	f(fName);
+    }
 };
 
 Client.prototype.loadFunctions = function(map) {
