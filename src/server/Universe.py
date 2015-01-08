@@ -37,8 +37,7 @@ class Universe:
       else:
         config = {"type": args["type"]}
 
-    if "name" in args:
-      name = args["name"]
+    config.update(args)
 
     ship = Ship.Ship(config, self)
     if name:
