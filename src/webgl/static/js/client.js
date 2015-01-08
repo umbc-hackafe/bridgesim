@@ -166,6 +166,11 @@ Client.prototype.init = function(host, port, path) {
 };
 
 Client.prototype.proxyContexts = function(obj) {
+    var type = typeof obj;
+    if (obj == null || type != "object") {
+	return obj;
+    }
+
     var created = JSON.parse(JSON.stringify(obj));
     for (var k in created) {
 	if (k == "context" && created.context != null) {
