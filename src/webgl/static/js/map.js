@@ -87,6 +87,10 @@ function Map(canvas, anchor, options) {
             contains[1] + "] to [" + contains[2] + "," + contains[3] +
             "]");
 
+    this.redraw();
+}
+
+Map.prototype.redraw = function() {
     this.clear();
     this.drawLines();
     this.drawUI();
@@ -201,7 +205,5 @@ Map.prototype.zoom = function(scale) {
 
     // Redraw
     console.log("Redrawing map with scales at " + 100 / scale + "%");
-    this.clear();
-    this.drawLines();
-    this.drawUI();
+    this.redraw();
 }

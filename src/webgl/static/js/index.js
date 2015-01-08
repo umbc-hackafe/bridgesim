@@ -117,15 +117,16 @@ function registerWithServer() {
 }
 
 function handleUpdates(data) {
+    console.log("Collecting updates");
     if ("updates" in data && data["updates"]) {
-	minimap.clear();
-	if ("entity" in data) {
-	    var entities = data["entity"];
-	    for (i in entities) {
-		var entity = entities[i];
-		minimap.drawBlip(entity.location[0], entity.location[1], {});
+	    minimap.redraw();
+	    if ("entity" in data) {
+	        var entities = data["entity"];
+	        for (i in entities) {
+		        var entity = entities[i];
+		        minimap.drawBlip(entity.location[0], entity.location[1], {});
+	        }
 	    }
-	}
     }
 }
 
@@ -142,6 +143,8 @@ $(function() {
 	    callback: function(res) {
 		console.log("We are " + res.result);
 		document.cookie="clientid=" + res.result;
+		window.clientID = res.result;
+		$(".conn-required, .id-required").show();
 	    }
 	});
     });
@@ -160,11 +163,15 @@ $(function() {
     });
 
     $("#update-enable").change(function() {
-	window.client.call("ClientUpdater__requestUpdates", ["ClientUpdater", 0], {args: ["entity", this.checked ? parseInt($("#update-freq").val()) : 0]});
+    window.client.call("ClientUpdater__requestUpdates",
+            ["ClientUpdater", window.clientID], {args: ["entity",
+                this.checked ? parseInt($("#update-freq").val()) : 0]});
     });
     $("#update-freq").change(function() {
 	if ($("#update-enable").prop("checked")) {
-	    window.client.call("ClientUpdater__requestUpdates", ["ClientUpdater", 0], {args: ["entity", parseInt($(this).val())]});
+        window.client.call("ClientUpdater__requestUpdates",
+                ["ClientUpdater", window.clientID], {args: ["entity",
+                    parseInt($(this).val())]});
 	}
     });
 
