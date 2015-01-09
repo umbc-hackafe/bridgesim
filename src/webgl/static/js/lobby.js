@@ -1,17 +1,12 @@
-function registerWithServer() {
-    $("#center-btn").click(function() {
-	window.client.call("whoami", null, {
-	    callback: function(res) {
-		console.log("You are " + res.result);
-	    }
-	})});
-}
-
 function handleUpdates(data) {
     if ("updates" in data && data["updates"]) {
-	if ("lobby" in data) {
-	    
-	}
+        for (var keyval in data["store"]) {
+	        if ("lobby-connected-players" in keyval) {
+                console.log("Updating player list.");
+                $("#player-list").html(
+                        keyval["lobby-connected-players"].join("<br />"));
+	        }
+        }
     }
 }
 
@@ -49,7 +44,57 @@ function loadShips() {
 }
 
 $(function() {
-    $("#lobby-form")[0].reset();
+    $(".hide-connected").show();
+    console.log("Hiding .show-connected");
+    $(".show-connected").hide();
+
+    $("#join-lobby-btn").on('click', function() {
+        // If there is a connection already open, close it.
+        if (typeof window.client != 'undefined' &&
+                window.client.socket.open) {
+            console.log("Closing old connection.");
+            window.client.socket.close();
+        }
+
+        console.log("Entering lobby with username " +
+                $("#player-name").val());
+
+        window.client = new Client(location.hostname, 9000, "/client",
+                function() {
+            console.log("WebSocket connected!");
+            $(".show-connected").show();
+            $(".hide-connected").hide();
+
+            window.client.socket.addOnClose(function() {
+                console.log("WebSocket DISCONNECTED!");
+                $(".show-connected").hide();
+                $(".hide-connected").show();
+            });
+
+            // Every time we receive an update, send it over to
+            // handleUpdates.
+            window.client.socket.addOnMessage(handleUpdates);
+            window.client.$ClientUpdater.requestUpdates("store", 20);
+
+            // Send the current player name to the shared data store.
+            window.client.$SharedClientDataStore.list_append(
+                    "lobby-connected-players", $("#player-name").val()).then(
+                    function(data) {
+                        if (data[0] == true) {
+                        console.log("Updating player list.");
+                        $("#player-list").html(data[1].join("<br />"));
+                        }
+                    });
+
+            // Update the list of connected player names at least once.
+            // window.client.$SharedClientDataStore.get(
+            //         "lobby-connected-players").then(function(data) {
+            //     $("#player-name").val(data.join("<br />"));
+            // });
+        });
+    });
+
+    // $("#lobby-form")[0].reset();
     $('[class*="-required"]').hide();
 
     $("#universe").change(function() {
@@ -115,25 +160,24 @@ $(function() {
 	}
     });
 
-    window.client = new Client(location.hostname, 9000, "/client");
-    window.client.socket.addOnOpen(function(evt) {
-	console.log("WebSocket is open!");
-	registerWithServer();
-	window.client.call("whoami", null, {
-	    callback: function(res) {
-		console.log("We are " + res.result);
-		document.cookie="clientid=" + res.result;
-		window.clientID = res.result;
-		$(".conn-required, .id-required").show();
-	    }
-	});
-	loadUniverses();
-    });
+    // window.client.socket.addOnOpen(function(evt) {
+	// console.log("WebSocket is open!");
+	// registerWithServer();
+	// window.client.call("whoami", null, {
+	    // callback: function(res) {
+		// console.log("We are " + res.result);
+		// document.cookie="clientid=" + res.result;
+		// window.clientID = res.result;
+		// $(".conn-required, .id-required").show();
+	    // }
+	// });
+	// loadUniverses();
+    // });
 
-    window.client.socket.addOnClose(function(evt) {
-	console.log("Socket CLOSED!");
-	$(".conn-required").prop("disabled", true);
-    });
+    // window.client.socket.addOnClose(function(evt) {
+	// console.log("Socket CLOSED!");
+	// $(".conn-required").prop("disabled", true);
+    // });
 
-    window.client.socket.addOnMessage(handleUpdates);
+    // window.client.socket.addOnMessage(handleUpdates);
 });

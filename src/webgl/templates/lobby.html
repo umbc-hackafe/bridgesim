@@ -14,31 +14,44 @@
 
 {% block body %}
   <h1>bridgesim</h1>
-  <form id="lobby-form">
-    <div id="lobby-form-div">
-      <label for="player-name">Player Name: <input type="text" id="player-name"/></label>
-      <div class="conn-required">
-	<label for="universe">Universe: <select id="universe"></select></label>
-      </div>
-      <div class="universe-required">
-	<button id="ship-create">+</button>
-	<label for="ship">Ship: <select id="ship"></select></label>
-      </div>
-      <div class="ship-required">
-	<label for="ship-name">Name: <input type="text" id="ship-name" value="SPACESHIP!"/></label>
-	<div id="role-select">
-	  <label for="role-helm">Helm<input type="checkbox" class="role" id="role-helm" name="role" data-role="helm" data-max-players="1"/></label>
-	  <label for="role-weapons">Weapons<input type="checkbox" class="role" id="role-weapons" name="role" data-role="weapons"/></label>
+  <div id="join-tools" class="outlined-box">
+  <div id="join-lobby-div">
+    <label for="player-name">
+      Name: <input type="text" id="player-name" / >
+    </label>
+    <button id="join-lobby-btn">Join Lobby</button>
+  </div>
+  </div>
+
+  <div id="lobby" class="show-connected outlined-box">
+    Lobby! <br />
+    <div id="player-list">No connected players.</div>
+  </div>
+  <!-- <form id="lobby-form"> -->
+  <!--   <div id="lobby-form-div"> -->
+  <!--     <label for="player-name">Player Name: <input type="text" id="player-name"/></label> -->
+  <!--     <div class="conn-required"> -->
+	<!-- <label for="universe">Universe: <select id="universe"></select></label> -->
+  <!--     </div> -->
+  <!--     <div class="universe-required"> -->
+	<!-- <button id="ship-create">+</button> -->
+	<!-- <label for="ship">Ship: <select id="ship"></select></label> -->
+  <!--     </div> -->
+  <!--     <div class="ship-required"> -->
+	<!-- <label for="ship-name">Name: <input type="text" id="ship-name" value="SPACESHIP!"/></label> -->
+	<!-- <div id="role-select"> -->
+	  <!-- <label for="role-helm">Helm<input type="checkbox" class="role" id="role-helm" name="role" data-role="helm" data-max-players="1"/></label> -->
+	  <!-- <label for="role-weapons">Weapons<input type="checkbox" class="role" id="role-weapons" name="role" data-role="weapons"/></label> -->
 	  <!--Sub-Roles (arsenal selection) goes here?-->
-	  <label for="role-science">Science<input type="checkbox" class="role" id="role-science" name="role" data-role="science"/></label>
-	  <label for="role-comms">Communications<input type="checkbox" class="role" id="role-comms" name="role" data-role="comms"/></label>
-	  <label for="role-engineer">Engineering<input type="checkbox" class="role" id="role-engineer" name="role" data-role="engineer" data-max-players="1"/></label>
-	</div>
-      </div>
-      <div class="role-required">
-	<label for="ready">Ready: <input type="checkbox" id="ready"/></label>
-      </div>
-      <div class="all-ready-required role-helm-required">
-	<button id="enter-game">Begin</button>
-      </div>
+	  <!-- <label for="role-science">Science<input type="checkbox" class="role" id="role-science" name="role" data-role="science"/></label> -->
+	  <!-- <label for="role-comms">Communications<input type="checkbox" class="role" id="role-comms" name="role" data-role="comms"/></label> -->
+	  <!-- <label for="role-engineer">Engineering<input type="checkbox" class="role" id="role-engineer" name="role" data-role="engineer" data-max-players="1"/></label> -->
+	<!-- </div> -->
+  <!--     </div> -->
+  <!--     <div class="role-required"> -->
+	<!-- <label for="ready">Ready: <input type="checkbox" id="ready"/></label> -->
+  <!--     </div> -->
+  <!--     <div class="all-ready-required role-helm-required"> -->
+	<!-- <button id="enter-game">Begin</button> -->
+  <!--     </div> -->
 {% endblock body %}
