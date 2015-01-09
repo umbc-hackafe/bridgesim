@@ -433,8 +433,13 @@ ObjectCache.prototype.handleUpdates = function(data) {
 
 	if ("store" in data) {
 	    for (var i in data["store"]) {
-		var update = data["store"][i];
-		$.extend(this.states["SharedClientDataStore"][0]["data"], update);
+            // Initialize the item at index zero if it doesn't exist.
+            if (typeof this.states["SharedClientDataStore"][0] ==
+                    'undefined') {
+                this.states["SharedClientDataStore"][0] = {};
+            }
+		    var update = data["store"][i];
+		    $.extend(this.states["SharedClientDataStore"][0]["data"], update);
 	    }
 	}
     }
