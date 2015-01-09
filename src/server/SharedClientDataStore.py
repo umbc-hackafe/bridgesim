@@ -115,7 +115,7 @@ class SharedClientDataStore:
         if key is None:
             # do all of them
             self.__updates[caller.id] = set()
-        else:
+        elif key in self.__updates[caller.id]:
             self.__updates[caller.id].remove(key)
 
     @expose(client=True)
