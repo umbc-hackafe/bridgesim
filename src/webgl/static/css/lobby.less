@@ -1,0 +1,27 @@
+#outlined-box {
+    margin: 5px;
+    padding: 5px;
+    outline: black outset 1px;
+}
+
+#center-btn {
+    @width: 200px;
+    @height: 30px;
+    position: relative;
+    width: @width;
+    height: @height;
+    top: ~"calc(75% - "@height~" / 2)";
+    left: ~"calc(50% - "@width~" / 2)";
+}
+
+#minimap-container {
+  position: fixed;
+  right: 0;
+  top: 0;
+}
+
+#minimap {
+  cursor: crosshair;
+  display: block;
+  background: #001122;
+}
