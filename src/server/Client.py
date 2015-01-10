@@ -72,7 +72,7 @@ class Client:
                         # handle setting properties
                         elif funcName in info["writable"] and len(data["args"]) == 1:
                             result = self.api.onSet(clsName + "." + funcName,
-                                                    context, *args)
+                                                    context, *args, client=self)
                             print("Client set {} to {} in class {}".format(
                                 funcName, data["args"][0], clsName))
 
