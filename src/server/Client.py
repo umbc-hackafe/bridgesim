@@ -1,7 +1,7 @@
 import uuid
 import random
 import traceback
-from ClientAPI import expose, readable, autocontext
+from ClientAPI import expose, readable, writable, autocontext
 
 ALL_KINDS = (
     "entity",
@@ -25,10 +25,14 @@ class Client:
         self.address = address
         self.server = server
         self.api = api
+        self.player = Player(self, self.api)
         self.maxage = 30
         self.sender.listeners.append(self.dataReceived)
         self.specials = {"whoami": (lambda d: self.id),
                          "universes": (lambda d: [self.server.universe]),
+                         "players": (lambda d: [client.player for client
+                             in self.server.clients.values() if
+                             client.sender.open]),
                          "expand": (lambda d: self.api.get(list(d["context"]))),
                          "functions": lambda d: {cls:
                                                  {"readable": info["readable"],
@@ -206,3 +210,13 @@ class ClientUpdater:
         self.sendUpdates(toUpdate)
 
         self.ticks += 1
+
+#@readable('universes')
+@writable('name')
+@autocontext(lambda c, g: c.player)
+class Player:
+    def __init__(self, client, api):
+        self.universe = None
+        self.client = client
+        self.api = api
+        self.name = ""

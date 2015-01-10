@@ -48,6 +48,7 @@ api.register(Component.WeaponsStation)
 api.register(Component.ShieldGenerator)
 api.register(SharedClientDataStore.SharedClientDataStore)
 api.register(Client.ClientUpdater)
+api.register(Client.Player)
 
 table = api.getTable()
 print("==== Function Table ====")
