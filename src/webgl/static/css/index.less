@@ -21,3 +21,29 @@
   display: block;
   background: #001122;
 }
+
+.centered {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  /* bring your own prefixes */
+  transform: translate(-50%, -50%);
+}
+
+.station-viewport {
+  outline: black outset 1px;
+  margin: 5px;
+}
+.centered-station-viewport {
+  .station-viewport;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+#weapons-viewport {
+  .centered-station-viewport;
+  width: 75%;
+  height: 75%;
+}

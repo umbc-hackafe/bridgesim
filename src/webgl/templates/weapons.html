@@ -1,0 +1,30 @@
+{% extends "full_canvas_base.html" %}
+
+{% block header_includes %}
+  {% if config.DEBUG %}
+    {{ super() }}
+    <script src="{{ url_for("static", filename="js/map.js") }}"></script>
+    <script src="{{ url_for("static", filename="js/client.js") }}"></script>
+    <script src="{{ url_for("static", filename="js/weapons.js") }}"></script>
+    <link rel="stylesheet" href="{{ url_for("static", filename="css/index.css") }}" />
+  {% else %}
+    <script src="{{ url_for("static", filename="js/index.min.js") }}"></script>
+    <link rel="stylesheet" href="{{ url_for("static", filename="css/index.min.css") }}" />
+  {% endif %}
+{% endblock header_includes %}
+
+{% block overlay_body %}
+
+  <div id="connection-status">
+    <text class="show-connected">Connected!</text>
+    <text class="hide-connected" style="color: red">Disconnected!</text>
+  </div>
+  
+  <div id="weapons-viewport" class="station-viewport-centered">
+    <div id="minimap-container" style="background: black">
+      <canvas id="minimap" class="minimap"/></canvas>
+      <!-- <button id="minimap-zoom-in">+</button> -->
+      <!-- <button id="minimap-zoom-out">-</button> -->
+    </div>
+  </div>
+{% endblock overlay_body %}
