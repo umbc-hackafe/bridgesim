@@ -263,15 +263,18 @@ Client.prototype.loadFunctions = function(map) {
 		for (var i in readable) {
 		    var attr = readable[i];
 		    var isWritable = writable.indexOf(attr) >= 0;
-		    Object.defineProperty(this, attr, {
-			get: function() {
-			    var res = client.cache.get(this.context, className, attr);
-			    return res;
-			},
-			set: function(val) {
-			    return isWritable ? proxy["__set_" + attr](val) : Error(attr + " is not writable");
-			}
-		    });
+		    var aNewFunction = function(theObj, theAttr, theIW) {
+			Object.defineProperty(theObj, theAttr, {
+			    get: function() {
+				var res = client.cache.get(this.context, className, theAttr);
+				return res;
+			    },
+			    set: function(val) {
+				return theIW ? proxy["__set_" + theAttr](val) : Error(theAttr + " is not writable");
+			    }
+			});
+		    };
+		    aNewFunction(this, attr, isWritable);
 		}
 	    };
 	};
