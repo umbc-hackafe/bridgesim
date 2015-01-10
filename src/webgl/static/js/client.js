@@ -299,8 +299,10 @@ Client.prototype.loadFunctions = function(map) {
 		prop = methodsAndWritable[i];
 	    }
 
+	    var remoteName = methodsAndWritable[i];
+
 	    // Did I mention...
-	    var f = function(clsName, pName) {
+	    var f = function(clsName, pName, rName) {
 		client.proxyClasses[clsName].prototype[pName] =
 		    function() {
 			var proxy = this;
@@ -316,7 +318,7 @@ Client.prototype.loadFunctions = function(map) {
 			}
 
 			return new Promise(function(resolve, reject) {
-			    client.call(clsName + "__" + pName,
+			    client.call(clsName + "__" + rName,
 					proxy.context,
 					{
 					    args: args,
@@ -334,7 +336,7 @@ Client.prototype.loadFunctions = function(map) {
 	    };
 
 	    // ... how much I hate Javascript?
-	    f(className, prop);
+	    f(className, prop, remoteName);
 	}
 
 	if (isGlobal) {
