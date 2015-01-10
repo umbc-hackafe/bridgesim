@@ -65,7 +65,7 @@ class ContextEncoder(VectorEncoder):
         if hasattr(obj, 'Context'):
             return {"context": list(obj.Context(instance=obj).serialized())}
         elif hasattr(obj, '__api_auto__'):
-            return {"context": [obj.__name__]}
+            return {"context": [obj.__class__.__name__]}
         return VectorEncoder.default(self, obj)
 
 class ExpansionEncoder(ContextEncoder):
@@ -107,6 +107,7 @@ class ClientHandler(WebSocket):
         super().__init__(*args, **kwargs)
         self.listeners = []
         self.listening = False
+        self.open = False
         print("Client connected!")
 
         self.client = None
@@ -132,11 +133,12 @@ class ClientHandler(WebSocket):
         self.universe.updaters.append(updater)
 
     def closed(self, code, message):
+        self.open = False
         super().closed(code, message)
         self.client.destroy()
 
     def opened(self):
-        pass
+        self.open = True
 
     def send(self, data, expand=False):
         encoder=ContextEncoder
