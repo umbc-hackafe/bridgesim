@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+
+{% block header_includes %}
+    {{ super() }}
+    {% if config.DEBUG %}
+    <script src="{{ url_for("static", filename="js/client.js") }}"></script>
+    <script src="{{ url_for("static", filename="js/screenclient.js") }}"></script>
+    <link rel="stylesheet" href="{{ url_for("static",
+        filename="css/common.css") }}" />
+    {% else %}
+    <script src="{{ url_for("static", filename="js/client.min.js") }}"></script>
+    <script src="{{ url_for("static", filename="js/screenclient.min.js") }}"></script>
+    <link rel="stylesheet" href="{{ url_for("static",
+        filename="css/common.min.css") }}" />
+    {% endif %}
+{% endblock header_includes %}
+
+
+{% block body %}
+<div id="connection-status-bar">
+  <text id="is-connected-indicator" class="show-connected">Connected</text>
+  <text id="is-disconnected-indicator"
+        class="hide-connected">Disconnected</text>
+</div>
+<div>
+    {% block inner_body %}{% endblock %}
+</div>
+{% endblock body %}

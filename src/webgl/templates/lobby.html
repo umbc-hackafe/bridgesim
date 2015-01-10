@@ -1,10 +1,8 @@
-{% extends "base.html" %}
+{% extends "base_connected.html" %}
 
 {% block header_includes %}
   {% if config.DEBUG %}
     {{ super() }}
-    <script src="{{ url_for("static", filename="js/client.js") }}"></script>
-    <script src="{{ url_for("static", filename="js/screenclient.js") }}"></script>
     <script src="{{ url_for("static", filename="js/lobby.js") }}"></script>
     <link rel="stylesheet" href="{{ url_for("static", filename="css/lobby.css") }}" />
   {% else %}
@@ -13,7 +11,7 @@
   {% endif %}
 {% endblock header_includes %}
 
-{% block body %}
+{% block inner_body %}
   <h1>bridgesim</h1>
   <form id="lobby-form">
     <div id="lobby-form-div">
@@ -42,4 +40,4 @@
       <div class="all-ready-required role-helm-required">
 	<button id="enter-game">Begin</button>
       </div>
-{% endblock body %}
+{% endblock inner_body %}

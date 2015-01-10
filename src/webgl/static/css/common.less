@@ -1,0 +1,27 @@
+@ok-green: #22aa33;
+@error-red: #aa3322;
+
+#connection-status-bar {
+  width: 100%;
+  outline: black inset 1px;
+  color: black;
+  font-size: 125%;
+}
+
+.connection-indicator {
+  display: table-cell;
+  vertical-align: center;
+  -moz-border-radius: 5px;
+  border-radius: 5px;
+  margin: 5px;
+  padding: 2px 5px;
+}
+
+#is-connected-indicator {
+  .connection-indicator;
+  background-color: @ok-green;
+}
+#is-disconnected-indicator {
+  .connection-indicator;
+  background-color: @error-red;
+}
