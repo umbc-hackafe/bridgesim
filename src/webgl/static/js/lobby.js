@@ -7,43 +7,60 @@ function handleUpdates(data) {
 }
 
 function loadUniverses() {
-    window.client.call("universes", null, {
-	callback: function(res) {
-	    window.universes = res.result;
+    window.client.$Specials.universes().then(function(data) {
+	    window.universes = data;
 	    for (k in window.universes) {
-		var universe = window.universes[k];
-		console.log(universe.name);
-		$("#universe").append($("<option>").attr("value", universe.id).text(universe.name))
-		$(".universe-required").show();
+		    var universe = window.universes[k];
+            universe.name.then(function(name) {
+		        console.log("Loading universe: ", name);
+                // TODO: use universe.id here
+                var id = universe.context[1];
+                console.log("ID " + id);
+                $("#universe").append($("<option>").attr("value",
+                            id).text(name))
+	            $(".universe-required").show();
+                $("#universe").change();
+            });
 	    }
-	    console.log(window.universes);
-	    loadShips();
-	},
-	expand: true
     });
 }
 
-function loadShips() {
-    for (var k in window.universes[0].entities) {
-	var ctx = window.universes[0].entities[k];
-	if (ctx[0] == "Ship") {
-	    window.client.call("expand", ctx, {
-		callback: function(res) {
-		    console.log("Ship result", res.result);
-		    $("#ship").append($("<option>").attr("value", res.result.id).text(res.result.name));
-		    $("#ship-name").val($("#ship :selected").text());
-		    $(".ship-required").show();
-		}
-	    });
-	}
-    }
+function loadShips(universeID) {
+    window.universes[universeID].entities.then(function(entities) {
+        console.log("Loading ships from " + universeID);
+        console.log(JSON.stringify(entities));
+        for (var k in entities) {
+            var entity = entities[k];
+            console.log(JSON.stringify(entity))
+            if (entity.context[0] == "Ship") {
+                entity.name.then(function(name) {
+                    console.log("Loading ship: " + name);
+                    entity.id.then(function(id) {
+                        $("#ship").append($("<option>").attr("value",
+                                    id).text(name));
+                        $("#ship-name").val($("#ship :selected").text());
+                        $(".ship-required").show();
+                    });
+                });
+            }
+        }
+    });
 }
 
 $(function() {
+    // There is no point for the form to be submitted to, so disallow
+    // submission.
+    $("#lobby-form").submit(false);
+
+    // Make sure the form is clear.
     $("#lobby-form")[0].reset();
+
+    // Hide any elements that are not yet relevant.
     $('[class*="-required"]').hide();
 
     $("#universe").change(function() {
+        var universeid = $("#universe :selected").attr("value");
+        loadShips(universeid);
     });
 
     $("#ship").change(function() {
