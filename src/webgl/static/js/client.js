@@ -9,41 +9,47 @@ function SocketWrapper(socket) {
     var wrap = this; // wat.
 
     socket.onopen = function(evt) {
-	wrap.open = true;
-	// APPARENTLY, this is now socket.this
-	for (var l in wrap.onOpens.slice(0)) {
-	    wrap.onOpens[l](evt);
-	}
+        // Log the socket opening.
+        console.log("WebSocket opened!")
 
-	for (var d in wrap.queuedData) {
-	    wrap.send(wrap.queuedData[d]);
-	}
-	wrap.queuedData = [];
+	    wrap.open = true;
+	    // APPARENTLY, this is now socket.this
+	    for (var l in wrap.onOpens.slice(0)) {
+	        wrap.onOpens[l](evt);
+	    }
+
+	    for (var d in wrap.queuedData) {
+	        wrap.send(wrap.queuedData[d]);
+	    }
+	    wrap.queuedData = [];
     }
 
     socket.onmessage = function(evt) {
-	var jsonData = JSON.parse(evt.data);
-	console.log("Receiving: ", jsonData);
-	if (jsonData == null) {
-	    console.log("Data is null... that's weird.");
-	} else {
-	    for (var l in wrap.onMessages.slice(0)) {
-		// Might need to do atob() here?
-		wrap.onMessages[l](jsonData);
+	    var jsonData = JSON.parse(evt.data);
+	    console.log("Receiving: ", jsonData);
+	    if (jsonData == null) {
+	        console.log("Data is null... that's weird.");
+	    } else {
+	        for (var l in wrap.onMessages.slice(0)) {
+		        // Might need to do atob() here?
+		        wrap.onMessages[l](jsonData);
+	        }
 	    }
-	}
     }
 
     socket.onerror = function(evt) {
-	for (var l in wrap.onErrors.slice(0)) {
-	    wrap.onErrors[l](evt);
-	}
+	    for (var l in wrap.onErrors.slice(0)) {
+	        wrap.onErrors[l](evt);
+	    }
     }
 
     socket.onclose = function(evt) {
-	for (var l in wrap.onCloses.slice(0)) {
-	    wrap.onCloses[l](evt);
-	}
+        // Log the closing
+        console.log("WebSocket closed!");
+
+	    for (var l in wrap.onCloses.slice(0)) {
+	        wrap.onCloses[l](evt);
+	    }
     }
 }
 
