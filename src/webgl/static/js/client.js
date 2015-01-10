@@ -270,7 +270,7 @@ Client.prototype.loadFunctions = function(map) {
 				return res;
 			    },
 			    set: function(val) {
-				return theIW ? proxy[theAttr](val) : Error(theAttr + " is not writable");
+				return theIW ? proxy["__set_" + theAttr](val) : Error(theAttr + " is not writable");
 			    }
 			});
 		    };
