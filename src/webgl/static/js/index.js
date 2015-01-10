@@ -118,6 +118,7 @@ $(function() {
             window.client.$ClientUpdater.requestUpdates("entity", 15);
 
             // Add some callbacks for logging.
+            $(".conn-required").prop("disabled", false);
             window.client.socket.addOnOpen(function(evt) {
                 console.log("WebSocket is open!");
                 $(".conn-required").prop("disabled", false);
