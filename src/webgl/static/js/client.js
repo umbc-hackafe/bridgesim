@@ -255,7 +255,7 @@ Client.prototype.loadFunctions = function(map) {
 
 	this.cache.registerClass(className, readable, writable);
 
-	var fffffffuuuuuuuuuuuu = function(className, readable, writable) {
+	var fffffffuuuuuuuuuuuu = function(className, readable, writable, cache) {
 	    client.proxyClasses[className] = function(ctx) {
 		this.context = ctx;
 		var proxy = this;
@@ -263,16 +263,16 @@ Client.prototype.loadFunctions = function(map) {
 		for (var i in readable) {
 		    var attr = readable[i];
 		    var isWritable = writable.indexOf(attr) >= 0;
-		    var aNewFunction = function(theObj, theAttr, theIW) {
+		    var aNewFunction = function(theObj, theAttr, theIW, theCache) {
 			Object.defineProperty(theObj, theAttr, {
 			    get: function() {
-				var res = client.cache.get(this.context, className, theAttr);
+				var res = theCache.get(this.context, className, theAttr);
 				return res;
 			    },
 			    set: function(val) {
 				var res;
 				if (theIW) {
-				    res = client.cache.set(this.context, className, theAttr, val);
+				    res = theCache.set(this.context, className, theAttr, val);
 				    proxy["__set_" + theAttr](res);
 				} else {
 				    res = Error(className + "." + theAttr + " is not writable");
@@ -281,12 +281,12 @@ Client.prototype.loadFunctions = function(map) {
 			    }
 			});
 		    };
-		    aNewFunction(this, attr, isWritable);
+		    aNewFunction(this, attr, isWritable, cache);
 		}
 	    };
 	};
 	// I assure you this name is quite appropriate
-	fffffffuuuuuuuuuuuu(className, readable, writable);
+	fffffffuuuuuuuuuuuu(className, readable, writable, this.cache);
 
 	var types = {};
 	for (var i in methods) {
@@ -383,7 +383,7 @@ Client.prototype.quit = function() {
 function hashContext(context) {
     if (context) {
 	return {bucket: context[0],
-		key: context.slice(1).join(".")};
+		key: context.length > 1 ? context.slice(1).join(".") : 0};
     } else {
 	return 0;
     }
