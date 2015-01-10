@@ -18,11 +18,12 @@
     <canvas id="minimap" class="map" width="200px" height="200px"/></canvas><br/>
     <button id="minimap-zoom-in">+</button>
     <button id="minimap-zoom-out">-</button>
+    <input id="map-lock-target" class="conn-required" type="number"
+           min="0" placeholder="0" size="4" />
   </div>
   <!-- <div class="conn-status" type="text" id="status-text">Connected!</div> -->
   <button class="conn-required" id="center-btn">Pause Rotation</button>
-  <button class="conn-required" id="map-lock-btn" type=submit>Lock map
-      to ship</button>
-  <input class="conn-required" type="text" id="map-lock-target"
-                                           width=20px placeholder="0"/>
+  <button class="conn-required" id="test-btn" type=submit>Test!</button>
+  <input class="conn-required" type="text" id="result-text"
+                                           placeholder="Test..."/>
 {% endblock overlay_body %}

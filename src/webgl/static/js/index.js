@@ -135,12 +135,8 @@ $(function() {
 
             // Trigger map-lock button when pressing enter from the
             // textbox.
-            $("#map-lock-target").keypress(function(e) {
-                if (e.keyCode == 13) {
-                    $("#map-lock-btn").click()
-                }
-            });
-            $("#map-lock-btn").click(function() {
+            $("#map-lock-target").change(function(e) {
+                console.log(e);
                 minimap.anchorTarget($("#map-lock-target").val());
             });
             // $("#test-btn").click(function() {
