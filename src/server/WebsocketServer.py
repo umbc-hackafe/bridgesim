@@ -65,7 +65,7 @@ class ContextEncoder(VectorEncoder):
         if hasattr(obj, 'Context'):
             return {"context": list(obj.Context(instance=obj).serialized())}
         elif hasattr(obj, '__api_auto__'):
-            return {"context": [obj.__class__.__name__]}
+            return {"context": [type(obj).__name__]}
         return VectorEncoder.default(self, obj)
 
 class ExpansionEncoder(ContextEncoder):
