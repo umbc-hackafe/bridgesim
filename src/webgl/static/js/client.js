@@ -293,11 +293,7 @@ Client.prototype.loadFunctions = function(map) {
 
 	for (var i in methodsAndWritable) {
 	    var prop;
-	    if (types[methodsAndWritable[i]] == "writable") {
-		prop = "__set_" + methodsAndWritable[i];
-	    } else {
-		prop = methodsAndWritable[i];
-	    }
+	    prop = methodsAndWritable[i];
 
 	    // Did I mention...
 	    var f = function(clsName, pName) {
