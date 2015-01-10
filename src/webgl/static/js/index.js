@@ -107,8 +107,6 @@ function render() {
 }
 
 $(function() {
-    $(".conn-required").prop("disabled", true);
-
     minimap = new Map($("#minimap")[0], {x: 0, y: 0},
             {sizeX: 2000, sizeY: 2000})
 
@@ -116,17 +114,6 @@ $(function() {
         function() {
             // Request updates about entities in the Universe.
             window.client.$ClientUpdater.requestUpdates("entity", 15);
-
-            // Add some callbacks for logging.
-            $(".conn-required").prop("disabled", false);
-            window.client.socket.addOnOpen(function(evt) {
-                console.log("WebSocket is open!");
-                $(".conn-required").prop("disabled", false);
-            });
-            window.client.socket.addOnClose(function(evt) {
-                console.log("WebSocket is CLOSED!");
-                $(".conn-required").prop("disabled", true);
-            });
 
             // Send entity updates to the minimap.
             window.client.socket.addOnMessage(function(data) {

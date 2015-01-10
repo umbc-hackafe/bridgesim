@@ -117,22 +117,16 @@ $(function() {
 
     window.client = new Client(location.hostname, 9000, "/client");
     window.client.socket.addOnOpen(function(evt) {
-	console.log("WebSocket is open!");
-	registerWithServer();
-	window.client.call("whoami", null, {
-	    callback: function(res) {
-		console.log("We are " + res.result);
-		document.cookie="clientid=" + res.result;
-		window.clientID = res.result;
-		$(".conn-required, .id-required").show();
-	    }
-	});
-	loadUniverses();
-    });
-
-    window.client.socket.addOnClose(function(evt) {
-	console.log("Socket CLOSED!");
-	$(".conn-required").prop("disabled", true);
+	    registerWithServer();
+	    window.client.call("whoami", null, {
+	        callback: function(res) {
+		        console.log("We are " + res.result);
+		        document.cookie="clientid=" + res.result;
+		        window.clientID = res.result;
+		        $(".enable-connected, .id-required").show();
+	        }
+	    });
+	    loadUniverses();
     });
 
     window.client.socket.addOnMessage(handleUpdates);
