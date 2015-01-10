@@ -413,17 +413,19 @@ ObjectCache.prototype.get = function(context, cls, attr) {
     }
 
     if (hash.bucket in this.states) {
-	if ((hash.key + "." + attr) in this.states[hash.bucket]) {
-	    return new Promise(function(resolve) {
-		resolve(that.client.proxyContexts(that.states[hash.bucket][hash.key + "." + attr]));
-	    });
+	if ((hash.key) in this.states[hash.bucket]) {
+	    if (attr in this.states[hash.bucket][hash.key]) {
+		return new Promise(function(resolve) {
+		    resolve(that.client.proxyContexts(that.states[hash.bucket][hash.key][attr]));
+		});
+	    }
 	}
     }
 
     return new Promise(function(resolve) {
 	that.client.call(cls + "__" + attr, context, {
 	    callback: function(data) {
-		that.states[hash.bucket][hash.key + "." + attr] = data.result;
+		that.states[hash.bucket][hash.key][attr] = data.result;
 		resolve(that.client.proxyContexts(data.result));
 	    }
 	});
@@ -432,10 +434,6 @@ ObjectCache.prototype.get = function(context, cls, attr) {
 
 ObjectCache.prototype.registerClass = function(name, readable, writable){ 
     this.states[name] = {};
-    for (var i in readable) {
-	var attr = readable[i];
-	this.states[name][attr] = null;
-    }
 }
 
 ObjectCache.prototype.handleUpdates = function(data) {
@@ -446,12 +444,27 @@ ObjectCache.prototype.handleUpdates = function(data) {
 		var hash = hashContext(entity["context"]);
 		this.states[hash.bucket][hash.key] = entity;
 	    }
-	}
-
-	if ("store" in data) {
+	} else if ("store" in data) {
 	    for (var i in data["store"]) {
 		var update = data["store"][i];
 		$.extend(this.states["SharedClientDataStore"][0]["data"], update);
+	    }
+	} else {
+	    for (var k in data) {
+		if (k != "updates") {
+		    for (var i in data[k]) {
+			if ("context" in data[k][i]) {
+			    var hash = hashContext(data[k][i].context);
+			    if (hash == 0) {
+				hash = {bucket: k, key: 0};
+			    }
+			    if (!(hash.key in this.states[hash.bucket]))
+				this.states[hash.bucket][hash.key] = {};
+
+			    $.extend(this.states[hash.bucket][hash.key], data[k][i]);
+			}
+		    }
+		}
 	    }
 	}
     }
