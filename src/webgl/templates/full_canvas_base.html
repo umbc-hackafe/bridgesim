@@ -1,5 +1,6 @@
-{% extends "base.html" %}
+{% extends "base_connected.html" %}
 {% block header_includes %}
+  {{ super() }}
   {% if config.DEBUG %}
     <script src="{{ url_for("static", filename="js/three/three.js") }}"></script>
     <script src="{{ url_for("static", filename="js/three/Group.js") }}"></script>
@@ -15,9 +16,9 @@
   {% endif %}
 {% endblock header_includes %}
 
-{% block body %}
+{% block inner_body %}
   <canvas id="main-canvas"></canvas>
   <div id="body-overlay">
     {% block overlay_body %}{% endblock %}
   </div>
-{% endblock body %}
+{% endblock inner_body %}
