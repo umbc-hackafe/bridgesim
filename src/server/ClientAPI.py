@@ -42,20 +42,18 @@ def expose(func=None, label=None, client=False):
 def readable(*attrs):
     def decorator(cls):
         if not hasattr(cls, "__api_readable__"):
-            setattr(cls, "__api_readable__", [])
-        cls.__api_readable__.extend([attr for attr in attrs if attr not in cls.__api_readable__])
+            setattr(cls, "__api_readable__", set())
+        cls.__api_readable__ |= set(attrs)
+
         return cls
     return decorator
 
 def writable(*attrs):
+    @readable(*attrs)
     def decorator(cls):
-        if not hasattr(cls, "__api_readable__"):
-            setattr(cls, "__api_readable__", [])
-
         if not hasattr(cls, "__api_writable__"):
             setattr(cls, "__api_writable__", [])
 
-        cls.__api_readable__.extend(attrs)
         cls.__api_writable__.extend(attrs)
         return cls
     return decorator
