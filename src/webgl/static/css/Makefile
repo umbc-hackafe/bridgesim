@@ -1,4 +1,4 @@
-CSS_TARGETS := common.min.css common.css index.min.css index.css common/fullwindow_canvas.min.css common/fullwindow_canvas.css
+CSS_TARGETS := common.min.css common.css index.min.css index.css lobby.min.css lobby.css common/fullwindow_canvas.min.css common/fullwindow_canvas.css
 
 all: $(CSS_TARGETS)
 
@@ -21,6 +21,13 @@ index.css: $(INDEX_DEPS)
 	lessc $(COMPILER_FLAGS) $< $@
 
 index.min.css: $(INDEX_DEPS)
+	lessc $(COMPILER_FLAGS) -x $< $@
+
+LOBBY_DEPS := lobby.less
+lobby.css: $(LOBBY_DEPS)
+	lessc $(COMPILER_FLAGS) $< $@
+
+lobby.min.css: $(LOBBY_DEPS)
 	lessc $(COMPILER_FLAGS) -x $< $@
 
 clean:

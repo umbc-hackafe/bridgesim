@@ -13,6 +13,12 @@
 
 {% block inner_body %}
   <h1>bridgesim</h1>
+
+  <div id="lobby-players" class="show-connected">
+    Test lobby-players
+  </div>
+
+
   <form id="lobby-form">
     <div id="lobby-form-div">
       <label for="player-name">Player Name: <input type="text" id="player-name"/></label>
@@ -40,4 +46,5 @@
       <div class="all-ready-required role-helm-required">
 	<button id="enter-game">Begin</button>
       </div>
+
 {% endblock inner_body %}

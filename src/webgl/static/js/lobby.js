@@ -47,6 +47,18 @@ function loadShips(universeID) {
     });
 }
 
+function loadPlayers() {
+    window.client.$Specials.players().then(function(players) {
+        for (var k in players) {
+            var player = players[k];
+            console.log(player);
+            player.name.then(function(name) {
+                console.log("Player: " + name);
+            });
+        }
+    });
+}
+
 $(function() {
     // There is no point for the form to be submitted to, so disallow
     // submission.
@@ -125,6 +137,7 @@ $(function() {
 
     window.client = ScreenClient(function() {
 	    loadUniverses();
+        loadPlayers();
     });
 
     window.client.socket.addOnMessage(handleUpdates);
