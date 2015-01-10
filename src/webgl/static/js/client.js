@@ -48,6 +48,9 @@ function SocketWrapper(socket) {
 }
 
 SocketWrapper.prototype.addOnOpen = function(cb) {
+    if (this.open) {
+        cb();
+    }
     this.onOpens.push(cb);
 }
 
@@ -60,6 +63,9 @@ SocketWrapper.prototype.addOnError = function(cb) {
 }
 
 SocketWrapper.prototype.addOnClose = function(cb) {
+    if (!this.open) {
+        cb();
+    }
     this.onCloses.push(cb);
 }
 
