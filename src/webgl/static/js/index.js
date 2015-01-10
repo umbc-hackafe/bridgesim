@@ -132,14 +132,25 @@ $(function() {
             window.client.socket.addOnMessage(function(data) {
                 minimap.updateFromData(data);
             });
-            $("#test-btn").click(function() {
-                window.client.call("Ship__name", ["Ship", 0, 1], {callback:
-                    function(res) {
-	                    $("#result-text").val(res.result);
-	                },
-                    args: [ prompt("Ship Name") ]
-                });
+
+            // Trigger map-lock button when pressing enter from the
+            // textbox.
+            $("#map-lock-target").keypress(function(e) {
+                if (e.keyCode == 13) {
+                    $("#map-lock-btn").click()
+                }
             });
+            $("#map-lock-btn").click(function() {
+                minimap.anchorTarget($("#map-lock-target").val());
+            });
+            // $("#test-btn").click(function() {
+            //     window.client.call("Ship__name", ["Ship", 0, 1], {callback:
+            //         function(res) {
+	                    // $("#result-text").val(res.result);
+	                // },
+            //         args: [ prompt("Ship Name") ]
+            //     });
+            // });
     });
 
 });
