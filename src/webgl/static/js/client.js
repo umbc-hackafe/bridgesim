@@ -270,7 +270,14 @@ Client.prototype.loadFunctions = function(map) {
 				return res;
 			    },
 			    set: function(val) {
-				return theIW ? proxy["__set_" + theAttr](val) : Error(theAttr + " is not writable");
+				var res;
+				if (theIW) {
+				    res = client.cache.set(this.context, className, theAttr, val);
+				    proxy["__set_" + theAttr](res);
+				} else {
+				    res = Error(className + "." + theAttr + " is not writable");
+				}
+				return res;
 			    }
 			});
 		    };
@@ -404,6 +411,23 @@ function ObjectCache(client, socket) {
     socket.addOnMessage(function(data) {that.handleUpdates(data);});
 }
 
+ObjectCache.prototype.set = function(context, cls, attr, val) {
+    var hash = hashContext(context);
+    var that = this;
+
+    if (hash == 0) {
+	hash = {bucket: cls, key: 0};
+    }
+
+    if (!(hash.bucket in this.states))
+	this.states[hash.bucket] = {};
+    if (!(hash.key in this.states[hash.bucket]))
+	this.states[hash.bucket][hash.key] = {};
+
+    this.states[hash.bucket][hash.key][attr] = val;
+    return val;
+};
+
 ObjectCache.prototype.get = function(context, cls, attr) {
     var hash = hashContext(context);
     var that = this;
@@ -425,7 +449,7 @@ ObjectCache.prototype.get = function(context, cls, attr) {
     return new Promise(function(resolve) {
 	that.client.call(cls + "__" + attr, context, {
 	    callback: function(data) {
-		that.states[hash.bucket][hash.key][attr] = data.result;
+		that.set(context, cls, attr, data.result);
 		resolve(that.client.proxyContexts(data.result));
 	    }
 	});
