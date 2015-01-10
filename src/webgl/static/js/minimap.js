@@ -6,8 +6,6 @@ $(document).ready(function() {
 
 window.addEventListener('resize', resize);
 function resize() {
-    // $('#minimap').width = window.innerWidth;
-    // $('#minimap').height = window.innerHeight;
     $('#minimap').prop('width', window.innerWidth);
     $('#minimap').prop('height', window.innerHeight);
     if (typeof minimap != 'undefined') {
@@ -25,7 +23,7 @@ function initClient() {
 }
 
 $(function() {
-    window.client = new Client(location.hostname, 9000, "/client", initClient);
+    window.client = ScreenClient(initClient);
 
     minimap = new Map($("#minimap")[0], {x: 0, y: 0}, {sizeX: 2000,
         sizeY: 2000}) ;

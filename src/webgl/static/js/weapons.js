@@ -47,7 +47,7 @@ function initClient() {
 }
 
 $(function() {
-    window.client = new Client(location.hostname, 9000, "/client", initClient);
+    window.client = ScreenClient(initClient);
 
     minimap = new Map($("#minimap")[0], {x: 0, y: 0}, {sizeX: 2000,
         sizeY: 2000}) ;

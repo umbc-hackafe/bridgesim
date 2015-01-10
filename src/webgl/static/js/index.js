@@ -110,8 +110,7 @@ $(function() {
     minimap = new Map($("#minimap")[0], {x: 0, y: 0},
             {sizeX: 2000, sizeY: 2000})
 
-    window.client = new Client(location.hostname, 9000, "/client",
-        function() {
+    window.client = ScreenClient(function() {
             // Request updates about entities in the Universe.
             window.client.$ClientUpdater.requestUpdates("entity", 15);
 
