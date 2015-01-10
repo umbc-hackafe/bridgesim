@@ -83,6 +83,8 @@ class ClientAPI:
     def __init__(self, globalContext):
         self.classes = {}
         self.globalContext = globalContext
+        self.objUpdates = {}
+        self.hasUpdates = False
 
     def onGet(self, name, ctx, client=None):
         cls, attr = name.split(".")
@@ -163,6 +165,23 @@ class ClientAPI:
             result = obj
         return result
 
+    def resetUpdates(self, cls=None):
+        if not cls:
+            self.hasUpdates = False
+            for k in self.objUpdates:
+                self.objUpdates[k] = set()
+        else:
+            self.objUpdates[cls] = set()
+
+    def addUpdates(self, cls, instance):
+        self.objUpdates[cls].add(instance)
+        self.hasUpdates = True
+
+    def getUpdates(self):
+        res = {cls.__name__: list(ins) for cls, ins in self.objUpdates.items()}
+        self.resetUpdates()
+        return res
+
     def register(self, cls):
         if hasattr(cls, "__api_auto__"):
             context = cls.__api_auto__
@@ -188,6 +207,8 @@ class ClientAPI:
         if hasattr(cls, "__api_readable__"):
             for attrName in cls.__api_readable__:
                 readable.append(attrName)
+
+            self.resetUpdates(cls)
 
         if hasattr(cls, "__api_writable__"):
             for attrName in cls.__api_writable__:

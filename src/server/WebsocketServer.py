@@ -128,7 +128,7 @@ class ClientHandler(WebSocket):
             ClientHandler.clients[self.client.id] = self.client
             print("Connected new client {}".format(self.client.id))
 
-        updater = ClientUpdater(self.universe, self.client)
+        updater = ClientUpdater(self.universe, self.client, self.api)
         self.universe.updaters.append(updater)
 
     def closed(self, code, message):

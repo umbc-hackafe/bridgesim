@@ -128,10 +128,11 @@ class Client:
 @readable('universes')
 @autocontext(lambda c,g:c.updater)
 class ClientUpdater:
-    def __init__(self, universe, client):
+    def __init__(self, universe, client, api):
         self.universes = [universe]
         self.client = client
         self.client.updater = self
+        self.api = api
 
         self.ticks = 0
 
@@ -182,6 +183,11 @@ class ClientUpdater:
                     if update:
                         self.client.queueUpdate(kind, update)
                 self.client.server.store.dequeue_update(None, self.client)
+
+        if self.api.hasUpdates:
+            for cls, members in self.api.getUpdates().items():
+                for m in members:
+                    self.client.queueUpdate(cls, self.api.expand(m))
 
         try:
             if self.client.updates:
