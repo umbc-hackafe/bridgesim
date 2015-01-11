@@ -213,7 +213,7 @@ class ClientUpdater:
 
         self.ticks += 1
 
-@writable('name')
+@writable('name', 'ship', 'component')
 class Player:
     class Context(BaseContext):
         def __init__(self, instance=None, serial=None):
@@ -234,3 +234,5 @@ class Player:
         self.client = client
         self.api = api
         self.name = ""
+        self.ship = None
+        self.component = None
