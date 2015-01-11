@@ -49,11 +49,16 @@ function loadShips(universeID) {
 
 function loadPlayers() {
     window.client.$Specials.players().then(function(players) {
+        var playerlist = $("#lobby-players").html('<ul></ul>').find('ul');
         for (var k in players) {
             var player = players[k];
             console.log(player);
             player.name.then(function(name) {
-                console.log("Player: " + name);
+                if (name == "") {
+                    name = "Unnamed Player";
+                }
+                console.log("Listing player: " + name);
+                playerlist.append("<li>" + name + "</li>");
             });
         }
     });
@@ -69,6 +74,22 @@ $(function() {
 
     // Hide any elements that are not yet relevant.
     $('[class*="-required"]').hide();
+
+    $("#player-name").keypress(function(e) {
+        // On an enter key pressed...
+        if (e.which == 13) {
+            // Set the player's name according to the value. It will be
+            // cached locally, so we don't have to worry about waiting
+            // for the server to get the update.
+            var newname = $("#player-name").val();
+            console.log("New player name: " + newname);
+            window.client.$Player.name = newname;
+
+            // Reload the player list.
+            loadPlayers();
+        }
+    });
+
 
     $("#universe").change(function() {
         var universeid = $("#universe :selected").attr("value");
