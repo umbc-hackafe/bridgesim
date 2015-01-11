@@ -1,6 +1,10 @@
 function ScreenClient(callback) {
     var client =  new Client(location.hostname, location.port,
-            "/client", callback);
+            "/client", function() {
+                document.cookie = "clientid=" + client.id;
+                callback();
+            });
+
     client.socket.addOnOpen(function() {
         changeStyleState("open");
     });
