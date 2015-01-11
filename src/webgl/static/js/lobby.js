@@ -66,6 +66,12 @@ function loadPlayers() {
             });
         }
     });
+    window.client.$Client.player.then(function(myplayer) {
+        if(myplayer)
+            myplayer.name.then(function(name) {
+                $("#player-name").val(name);
+            });
+    });
 }
 
 $(function() {
