@@ -19,8 +19,6 @@ function loadUniverses() {
                 console.log("ID " + id);
                 $("#universe").append($("<option>").attr("value",
                             id).text(name))
-	            $(".universe-required").show();
-                $("#universe").change();
             });
 	    }
     });
@@ -40,7 +38,11 @@ function loadShips(universeID) {
                         $("#ship").append($("<option>").attr("value",
                                     id).text(name));
                         $("#ship-name").val($("#ship :selected").text());
-                        $(".ship-required").show();
+
+                        $("#ships-waiting").append($("<div>")
+                                .addClass("ship-crew-box")
+                                .attr("id", "#ship-opt-" + name)
+                                );
                     });
                 });
             }
@@ -75,33 +77,38 @@ $(function() {
     $("#lobby-form")[0].reset();
 
     // Hide any elements that are not yet relevant.
-    $('[class*="-required"]').hide();
+    $(".universe-required").hide();
+    $(".ship-required").hide();
+    $(".role-required").hide();
+    $(".role-helm-required").hide();
 
-    $("#player-name").keypress(function(e) {
+    $("#player-name").change(function() {
         // On an enter key pressed...
-        if (e.which == 13) {
-            // Set the player's name according to the value. It will be
-            // cached locally, so we don't have to worry about waiting
-            // for the server to get the update.
-            var newname = $("#player-name").val();
-            console.log("New player name: " + newname);
-            window.client.$Client.player.then(function(player) {
-                player.name = newname;
-            });
+        // Set the player's name according to the value. It will be
+        // cached locally, so we don't have to worry about waiting
+        // for the server to get the update.
+        var newname = $("#player-name").val();
+        console.log("New player name: " + newname);
+        window.client.$Client.player.then(function(player) {
+            player.name = newname;
+        });
 
-            // Reload the player list.
-            loadPlayers();
-        }
+        // Reload the player list.
+        loadPlayers();
     });
 
 
     $("#universe").change(function() {
         var universeid = $("#universe :selected").attr("value");
+        $(".universe-required").show();
         loadShips(universeid);
     });
 
     $("#ship").change(function() {
-	$("#ship-name").val($("#ship :selected").text());
+        var selectedShip = $("#ship :selected").text();
+        console.log("Selecting ship " + selectedShip);
+	    $("#ship-name").val(selectedShip);
+        $(".ship-required").show();
     });
 
     $("#ship-name").keyup(function() {
