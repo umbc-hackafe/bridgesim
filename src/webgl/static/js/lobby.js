@@ -34,16 +34,14 @@ function loadShips(universeID) {
             if (entity.context[0] == "Ship") {
                 entity.name.then(function(name) {
                     console.log("Loading ship: " + name);
-                    entity.id.then(function(id) {
-                        $("#ship").append($("<option>").attr("value",
-                                    id).text(name));
-                        $("#ship-name").val($("#ship :selected").text());
+                    $("#ship").append($("<option>").attr("value",
+                                    entity.context).text(name));
+                    $("#ship-name").val($("#ship :selected").text());
 
-                        $("#ships-waiting").append($("<div>")
-                                .addClass("ship-crew-box")
-                                .attr("id", "#ship-opt-" + name)
-                                );
-                    });
+                    $("#ships-waiting").append($("<div>")
+                            .addClass("ship-crew-box")
+                            .attr("id", "#ship-opt-" + name)
+                            );
                 });
             }
         }
@@ -115,6 +113,10 @@ $(function() {
         console.log("Selecting ship " + selectedShip);
 	    $("#ship-name").val(selectedShip);
         $(".ship-required").show();
+
+        client.$Client.player.then(function(player) {
+            player.ship = $("#ship :selected").val();
+        });
     });
 
     $("#ship-name").keyup(function() {

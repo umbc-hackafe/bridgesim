@@ -125,6 +125,20 @@ $(function() {
                 console.log(e);
                 minimap.anchorTarget($("#map-lock-target").val());
             });
+
+            // Lock the minimap automatically if the player is attached
+            // to a ship.
+            window.client.$Client.player.then(function(player) {
+                player.ship.then(function(ship) {
+                    if (ship) {
+                        minimap.anchorTarget(ship);
+                        ship.id.then(function(id) {
+                            minimap.anchorTarget(id);
+                        });
+                    }
+                });
+            });
+
             // $("#test-btn").click(function() {
             //     window.client.call("Ship__name", ["Ship", 0, 1], {callback:
             //         function(res) {
