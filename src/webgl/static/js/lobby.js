@@ -1,8 +1,9 @@
 function handleUpdates(data) {
     if ("updates" in data && data["updates"]) {
-	if ("lobby" in data) {
-	    
-	}
+        console.log("Got update");
+	    if ("Player" in data) {
+            loadPlayers();
+	    }
     }
 }
 
@@ -54,7 +55,8 @@ function loadPlayers() {
             var player = players[k];
             console.log(player);
             player.name.then(function(name) {
-                if (name == "") {
+                // If the name is falsey, use a placeholder.
+                if (!name) {
                     name = "Unnamed Player";
                 }
                 console.log("Listing player: " + name);
@@ -83,7 +85,9 @@ $(function() {
             // for the server to get the update.
             var newname = $("#player-name").val();
             console.log("New player name: " + newname);
-            window.client.$Player.name = newname;
+            window.client.$Client.player.then(function(player) {
+                player.name = newname;
+            });
 
             // Reload the player list.
             loadPlayers();
@@ -162,4 +166,5 @@ $(function() {
     });
 
     window.client.socket.addOnMessage(handleUpdates);
+    window.client.$ClientUpdater.requestUpdates("Player", 50);
 });

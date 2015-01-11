@@ -1,7 +1,7 @@
 import uuid
 import random
 import traceback
-from ClientAPI import expose, readable, writable, autocontext
+from ClientAPI import BaseContext, expose, readable, writable, autocontext
 
 ALL_KINDS = (
     "entity",
@@ -18,6 +18,8 @@ ALL_KINDS = (
 class ClientClosedException(Exception):
     pass
 
+@autocontext(lambda c, g: c)
+@readable('player')
 class Client:
     def __init__(self, api, address, server, sender):
         self.updates = {}
@@ -211,10 +213,22 @@ class ClientUpdater:
 
         self.ticks += 1
 
-#@readable('universes')
 @writable('name')
-@autocontext(lambda c, g: c.player)
 class Player:
+    class Context(BaseContext):
+        def __init__(self, instance=None, serial=None):
+            if instance:
+                self.id = instance.client.id
+
+            elif serial:
+                _, self.id = serial
+
+        def serialized(self):
+            return ("Player", self.id)
+
+        def instance(self, global_context):
+            return global_context.network.clients[self.id].player
+
     def __init__(self, client, api):
         self.universe = None
         self.client = client
