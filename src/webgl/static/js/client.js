@@ -6,50 +6,63 @@ function SocketWrapper(socket) {
     this.onErrors = [];
     this.onCloses = [];
     this.open = false;
-    var wrap = this; // wat.
+    this.closed = false;
+    this.wrap(socket);
+}
 
-    socket.onopen = function(evt) {
-        // Log the socket opening.
-        console.log("WebSocket opened!")
+SocketWrapper.prototype.wrap = function(socket) {
+    var that = this;
+    socket.onmessage = function(evt) {that.__doOnMessage(evt);};
+    socket.onerror = function(evt) {that.__doOnError(evt);};
+    socket.onclose = function(evt) {that.__doOnClose(evt);};
+    socket.onopen = function(evt) {that.__doOnOpen(evt);};
+}
 
-	    wrap.open = true;
-	    // APPARENTLY, this is now socket.this
-	    for (var l in wrap.onOpens.slice(0)) {
-	        wrap.onOpens[l](evt);
-	    }
+SocketWrapper.prototype.__doOnOpen = function(evt) {
+    // Log the socket opening.
+    console.log("WebSocket opened!")
 
-	    for (var d in wrap.queuedData) {
-	        wrap.send(wrap.queuedData[d]);
-	    }
-	    wrap.queuedData = [];
+    this.open = true;
+    this.closed = false;
+    // APPARENTLY, this is now socket.this
+    for (var l in this.onOpens.slice(0)) {
+	this.onOpens[l](evt);
     }
 
-    socket.onmessage = function(evt) {
-	    var jsonData = JSON.parse(evt.data);
-	    console.log("Receiving: ", jsonData);
-	    if (jsonData == null) {
-	        console.log("Data is null... that's weird.");
-	    } else {
-	        for (var l in wrap.onMessages.slice(0)) {
-		        // Might need to do atob() here?
-		        wrap.onMessages[l](jsonData);
-	        }
-	    }
+    for (var d in this.queuedData) {
+	this.send(this.queuedData[d]);
     }
+    this.queuedData = [];
+}
 
-    socket.onerror = function(evt) {
-	    for (var l in wrap.onErrors.slice(0)) {
-	        wrap.onErrors[l](evt);
-	    }
+SocketWrapper.prototype.__doOnMessage = function(evt) {
+    var jsonData = JSON.parse(evt.data);
+    console.log("Receiving: ", jsonData);
+    if (jsonData == null) {
+	console.log("Data is null... that's weird.");
+    } else {
+	for (var l in this.onMessages.slice(0)) {
+	    // Might need to do atob() here?
+	    this.onMessages[l](jsonData);
+	}
     }
+}
 
-    socket.onclose = function(evt) {
-        // Log the closing
-        console.log("WebSocket closed!");
+SocketWrapper.prototype.__doOnError = function(evt) {
+    for (var l in this.onErrors.slice(0)) {
+	this.onErrors[l](evt);
+    }
+}
 
-	    for (var l in wrap.onCloses.slice(0)) {
-	        wrap.onCloses[l](evt);
-	    }
+SocketWrapper.prototype.__doOnClose = function(evt) {
+    // Log the closing
+    console.log("WebSocket closed!");
+
+    this.open = false;
+    this.closed = true;
+
+    for (var l in this.onCloses.slice(0)) {
+	this.onCloses[l](evt);
     }
 }
 
@@ -161,14 +174,58 @@ function Client(host, port, path, doneCB) {
     this.socket = null;
     this.seq = Math.floor(Math.random() * 9007199254740992);
     this.doneCB = doneCB;
+
+    this.reconnect = true;
+    this.reconnectAttempts = 0;
+    this.reconnectWait = 1000;
+    this.reconnectTimer = -1;
+
     this.init(host, port, path);
 }
+
+Client.prototype.doReconnectInterval = function(host, port, path) {
+    var client = this;
+    if (!this.socket.open && this.socket.closed) {
+	this.socket.wrap(new WebSocket("ws://" + host + ":" + port + (path[0] == "/" ? path : "/" + path)));
+
+	this.reconnectTimer = setTimeout(function() {
+	    client.doReconnectInterval(host, port, path);
+	}, this.reconnectWait);
+
+	this.reconnectAttempts++;
+
+	if (this.reconnectAttempts > 5 && this.reconnectAttempts <= 13)
+	    this.reconnectWait *= 2;
+    }
+};
+
+Client.prototype.startReconnect = function(host, port, path) {
+    var client = this;
+    if (client.reconnect && client.reconnectAttempts == 0) {
+	this.doReconnectInterval(host, port, path);
+    }
+};
 
 Client.prototype.init = function(host, port, path) {
     if (this.socket) this.socket.close();
     this.socket = new SocketWrapper(new WebSocket("ws://" + host + ":" + port + (path[0] == "/" ? path : "/" + path)));
     var client = this;
+
+    var addReconnector = function(host, port, path) {
+	client.socket.addOnClose(function(evt) {
+	    client.startReconnect(host, port, path);
+	});
+    };
+    addReconnector(host, port, path);
+
     this.socket.addOnOpen(function() {
+	if (client.reconnectTimer != -1) {
+	    clearTimeout(client.reconnectTimer);
+	    client.reconnectTimer = -1;
+	    client.reconnectAttempts = 0;
+	    client.reconnectWait = 1000;
+	}
+
 	client.call("functions", null, {
 	    callback: function(data) {
 		client.loadFunctions(data.result);
@@ -377,6 +434,7 @@ Client.prototype.call = function(name, context, extras) {
 
 Client.prototype.quit = function() {
     console.log("Quitting");
+    this.reconnect = false;
     this.socket.close();
 }
 
