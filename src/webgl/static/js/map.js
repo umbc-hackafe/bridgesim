@@ -8,11 +8,15 @@ function identify(num, chars) {
     return r
 }
 
-// Set a sector of 1 kilometer, because that's the best unit
+// Set a sector of 10 kilometers, because that's a good unit for space
+// sizes.
 // 1 au = 149597871000m
-var sectorSizeX = 1000;
-var sectorSizeY = 1000;
-var sectorSizeZ = 1000;
+var sectorSizeX = 10000;
+var sectorSizeY = 10000;
+var sectorSizeZ = 10000;
+var subSectorSizeX = sectorSizeX/2;
+var subSectorSizeY = sectorSizeY/2;
+var subSectorSizeZ = sectorSizeZ/2;
 
 var alpha = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 var num = "0123456789"
@@ -52,9 +56,12 @@ function Map(canvas, anchor, options) {
     // determine the height and width.
     this.opts = {
 	    borderColor: "#ffffff",
-	    gridColor: "#003",
-	    sizeX: 2000, // X display width is 2000m
-	    sizeY: 2000  // Y display width is 2000m
+        sectorLineWidth: 2,
+        subSectorLineWidth: 1,
+	    sectorColor: "#99f",
+	    subSectorColor: "#55a",
+	    sizeX: 10000, // X display width is 10000m
+	    sizeY: 10000  // Y display width is 10000m
     };
 
     if (options)
@@ -97,6 +104,7 @@ Map.prototype.clear = function() {
 
 Map.prototype.drawUI = function() {
     // Draw a border!
+    this.context.beginPath();
     this.context.moveTo(0, 0);
     this.context.lineTo(this.width, 0);
     this.context.lineTo(this.width, this.height);

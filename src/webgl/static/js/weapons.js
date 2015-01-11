@@ -49,8 +49,8 @@ function initClient() {
 $(function() {
     window.client = ScreenClient(initClient);
 
-    minimap = new Map($("#minimap")[0], {x: 0, y: 0}, {sizeX: 2000,
-        sizeY: 2000}) ;
+    minimap = new Map($("#minimap")[0], {x: 0, y: 0},
+            {sizeX: 10000, sizeY: 10000}) ;
     //minimap.drawBlip(500, 1000);
 
     console.log(minimap.getSectorName(0,0,0));
