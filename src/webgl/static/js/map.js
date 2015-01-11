@@ -108,37 +108,62 @@ Map.prototype.drawUI = function() {
 }
 
 Map.prototype.drawLines = function() {
-    var minSectorX = sectorSizeX * (Math.trunc(this.cornerX() / sectorSizeX));
-    var minSectorY = sectorSizeY * (Math.trunc(this.cornerY() / sectorSizeY));
-    var xLoc = this.getDisplayLocation(minSectorX, this.cornerY());
-    var yLoc = this.getDisplayLocation(this.cornerX(), minSectorY);
-
-    this.context.strokeStyle = this.opts.gridColor;
+    var minSubSectorX = subSectorSizeX * (Math.trunc(this.cornerX() /
+                subSectorSizeX));
+    var minSubSectorY = subSectorSizeY * (Math.trunc(this.cornerY() /
+                subSectorSizeY));
+    var xLoc = this.getDisplayLocation(minSubSectorX, this.cornerY());
+    var yLoc = this.getDisplayLocation(this.cornerX(), minSubSectorY);
 
     while (yLoc.y <= this.height) {
-	if (this.isOnMap(this.cornerX(), minSectorY)) {
-	    this.context.moveTo(0+.5, yLoc.y+.5);
-	    this.context.lineTo(this.width+.5, yLoc.y+.5);
-	    this.context.stroke();
-	}
 
-	while (xLoc.x <= this.width) {
-	    if (this.isOnMap(minSectorX, this.cornerY())) {
-		this.context.moveTo(xLoc.x+.5, 0.5);
-		this.context.lineTo(xLoc.x+.5, this.height+.5);
-		this.context.stroke();
+        // If the y location falls on a full sector line, draw it with
+        // the sector color. Otherwise, use a subsector.
+        if (minSubSectorY % sectorSizeY == 0) {
+            this.context.strokeStyle = this.opts.sectorColor;
+            this.context.lineWidth = this.opts.sectorLineWidth;
+        } else {
+            this.context.strokeStyle = this.opts.subSectorColor;
+            this.context.lineWidth = this.opts.subSectorLineWidth;
+        }
+
+	    if (this.isOnMap(this.cornerX(), minSubSectorY)) {
+            this.context.beginPath();
+	        this.context.moveTo(0+.5, yLoc.y+.5);
+	        this.context.lineTo(this.width+.5, yLoc.y+.5);
+	        this.context.stroke();
 	    }
-	    minSectorX += sectorSizeX;
-	    xLoc = this.getDisplayLocation(minSectorX, this.cornerY());
-	}
-	minSectorY += sectorSizeY;
-	yLoc = this.getDisplayLocation(this.cornerX(), minSectorY);
+
+	    while (xLoc.x <= this.width) {
+            // If the x location falls on a full sector line, draw it with
+            // the sector color. Otherwise, use a subsector.
+            if (minSubSectorX % sectorSizeX == 0) {
+                this.context.strokeStyle = this.opts.sectorColor;
+                this.context.lineWidth = this.opts.sectorLineWidth;
+            } else {
+                this.context.strokeStyle = this.opts.subSectorColor;
+                this.context.lineWidth = this.opts.subSectorLineWidth;
+            }
+
+	        if (this.isOnMap(minSubSectorX, this.cornerY())) {
+                this.context.beginPath();
+		        this.context.moveTo(xLoc.x+.5, 0.5);
+		        this.context.lineTo(xLoc.x+.5, this.height+.5);
+		        this.context.stroke();
+	        }
+
+	        minSubSectorX += subSectorSizeX;
+	        xLoc = this.getDisplayLocation(minSubSectorX, this.cornerY());
+	    }
+	    minSubSectorY += subSectorSizeY;
+	    yLoc = this.getDisplayLocation(this.cornerX(), minSubSectorY);
     }
 }
 
 Map.prototype.drawBlip = function(x, y, options) {
     var opts = {color: "#ff0000",
 		shape: "dot",
+        radius: 5,
 		label: "Ship"};
 
     if (options)
@@ -151,7 +176,9 @@ Map.prototype.drawBlip = function(x, y, options) {
 
 	if (opts.shape == "dot") {
 	    this.context.beginPath();
-	    this.context.arc(loc.x, loc.y, 5, 0, 2 * Math.PI, true);
+        this.context.arc(loc.x, loc.y,
+                opts.radius * (this.scaleX + this.scaleY) / 2,
+                0, 2 * Math.PI, true);
 	    this.context.fill();
 	}
     } else {
@@ -219,7 +246,6 @@ Map.prototype.updateFromData = function(data) {
             var entities = data["entity"];
             for (i in entities) {
                 var entity = entities[i];
-                var properties = {};
                 if (entity.context[0] == "Ship") {
                     if (entity.id == this.targetid) {
                         this.anchor.x = entity.location[0];
@@ -227,9 +253,10 @@ Map.prototype.updateFromData = function(data) {
                         this.anchor.z = entity.location[2];
                         properties["color"] = "#AAAAAA";
                     }
-                }
-                minimap.drawBlip(entity.location[0],
+                    properties = { radius: entity.radius };
+                    minimap.drawBlip(entity.location[0],
                         entity.location[1], properties);
+                }
             }
         }
     }
