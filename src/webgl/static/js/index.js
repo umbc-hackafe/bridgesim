@@ -140,15 +140,9 @@ $(function() {
 
             // Lock the minimap automatically if the player is attached
             // to a ship.
-            window.client.$Client.player.then(function(player) {
-                player.ship.then(function(ship) {
-                    if (ship) {
-                        ship.id.then(function(id) {
-                            minimap.anchorTarget(id);
-                        });
-                    }
-                });
-            });
+            minimapXY.autoAnchorPlayer(window.client);
+            minimapYZ.autoAnchorPlayer(window.client);
+            minimapXZ.autoAnchorPlayer(window.client);
 
             // $("#test-btn").click(function() {
             //     window.client.call("Ship__name", ["Ship", 0, 1], {callback:

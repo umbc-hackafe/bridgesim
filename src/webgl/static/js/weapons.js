@@ -42,6 +42,10 @@ function initClient() {
 	    });
     });
 
+    // Lock the minimap automatically if the player is attached
+    // to a ship.
+    minimap.autoAnchorPlayer(window.client);
+
     window.client.socket.addOnMessage(function(data)
             {minimap.updateFromData(data);});
 }

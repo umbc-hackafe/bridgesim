@@ -200,6 +200,21 @@ Map.prototype.anchorTarget = function(targetid) {
     this.targetid = targetid;
 }
 
+Map.prototype.autoAnchorPlayer = function(client) {
+    var that = this;
+
+    client.$Client.player.then(function(player) {
+        player.ship.then(function(ship) {
+            if (ship) {
+                ship.id.then(function(id) {
+                    console.log("Anchoring map to player ship ID: " + id);
+                    that.anchorTarget(id);
+                });
+            }
+        });
+    });
+}
+
 // Shortcuts!
 Map.prototype.anchorW = function() {
     return this.getAnchor()[this.opts.planeW];
