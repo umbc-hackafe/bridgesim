@@ -126,5 +126,5 @@ while True:
   universe.collide()
   universe.tock()
 #  print("Sleeping:", time.time()-last)
-  time.sleep((1/frameRate)-(time.time()-last))
+  time.sleep(max((1/frameRate)-(time.time()-last),0))
   
