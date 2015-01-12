@@ -11,12 +11,8 @@ function identify(num, chars) {
 // Set a sector of 10 kilometers, because that's a good unit for space
 // sizes.
 // 1 au = 149597871000m
-var sectorSizeX = 10000;
-var sectorSizeY = 10000;
-var sectorSizeZ = 10000;
-var subSectorSizeX = sectorSizeX/2;
-var subSectorSizeY = sectorSizeY/2;
-var subSectorSizeZ = sectorSizeZ/2;
+var sectorSize = 10000;
+var subSectorSize = sectorSize/2;
 
 var alpha = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 var num = "0123456789"
@@ -31,18 +27,22 @@ var greek = "\x03b1\x03b2\x03b3\x03b4\x03b5\x03b6\x03b7\x03b8\x03b9\x03ba\x03bb\
 // Valid options:
 // # Scaling #
 // scale   : sets both X and Y scale, in pixels-per-meter
-// scaleX  : sets only X scale, in pixels-per-meter
-// scaleY  : sets only Y scale, in pixels-per-meter
-// sizeX   : sets the scale such that the map represensts a real width of (sizeX) m
-// sizeY   : sets the scale such that the map represents a real height of (sizeY) m
+// scaleW  : sets only X scale, in pixels-per-meter
+// scaleH  : sets only Y scale, in pixels-per-meter
+// sizeW   : sets the scale such that the map represensts a real width of (sizeW) m
+// sizeH   : sets the scale such that the map represents a real height of (sizeH) m
 //
 // # Colors #
 // borderColor  : sets the color of the map's borders
 function Map(canvas, anchor, options) {
     this.canvas = canvas;
     this.context = canvas.getContext("2d");
-    this.anchor = anchor;
+    this.anchor = {x: 0, y: 0, z: 0};
     this.targetid = -1;
+
+    // Fill out missing coordinates with zero in the anchor.
+    if (anchor)
+        $.extend(this.anchor, anchor);
 
     if (typeof anchor === "function") {
 	    this.getAnchor = this.anchor;
@@ -55,20 +55,22 @@ function Map(canvas, anchor, options) {
     // Retrieve the options for scaling, because they need to be used to
     // determine the height and width.
     this.opts = {
+        planeW: "x",
+        planeH: "y",
 	    borderColor: "#ffffff",
         sectorLineWidth: 2,
         subSectorLineWidth: 1,
 	    sectorColor: "#99f",
 	    subSectorColor: "#55a",
-	    sizeX: 10000, // X display width is 10000m
-	    sizeY: 10000  // Y display width is 10000m
+	    sizeW: 10000, // X display width is 10000m
+	    sizeH: 10000  // Y display width is 10000m
     };
 
     if (options)
 	    $.extend(this.opts, options);
 
-    this.sizeX = this.opts.sizeX;
-    this.sizeY = this.opts.sizeY;
+    this.sizeW = this.opts.sizeW;
+    this.sizeH = this.opts.sizeH;
 
     this.rescale($(this.canvas).width(), $(this.canvas).height());
     this.redraw();
@@ -78,13 +80,13 @@ Map.prototype.rescale = function(width, height) {
     this.width = width;
     this.height = height;
 
-    this.scaleX = this.width / this.sizeX;
-    this.scaleY = this.height / this.sizeY;
+    this.scaleW = this.width / this.sizeW;
+    this.scaleH = this.height / this.sizeH;
 
-    contains = [ this.cornerX(),
-                 this.cornerY(),
-                (this.cornerX() + this.width / this.scaleX),
-                (this.cornerY() + this.height / this.scaleY) ]
+    contains = [ this.cornerW(),
+                 this.cornerH(),
+                (this.cornerW() + this.width / this.scaleW),
+                (this.cornerH() + this.height / this.scaleH) ]
 
     console.log("Map rescaled, contains [" + contains[0] + "," +
             contains[1] + "] to [" + contains[2] + "," + contains[3] +
@@ -116,18 +118,18 @@ Map.prototype.drawUI = function() {
 }
 
 Map.prototype.drawLines = function() {
-    var minSubSectorX = subSectorSizeX * (Math.trunc(this.cornerX() /
-                subSectorSizeX));
-    var minSubSectorY = subSectorSizeY * (Math.trunc(this.cornerY() /
-                subSectorSizeY));
-    var xLoc = this.getDisplayLocation(minSubSectorX, this.cornerY());
-    var yLoc = this.getDisplayLocation(this.cornerX(), minSubSectorY);
+    var minSubSectorX = subSectorSize * (Math.trunc(this.cornerW() /
+                subSectorSize));
+    var minSubSectorY = subSectorSize * (Math.trunc(this.cornerH() /
+                subSectorSize));
+    var xLoc = this.getDisplayLocation(minSubSectorX, this.cornerH());
+    var yLoc = this.getDisplayLocation(this.cornerW(), minSubSectorY);
 
     while (yLoc.y <= this.height) {
 
         // If the y location falls on a full sector line, draw it with
         // the sector color. Otherwise, use a subsector.
-        if (minSubSectorY % sectorSizeY == 0) {
+        if (minSubSectorY % sectorSize == 0) {
             this.context.strokeStyle = this.opts.sectorColor;
             this.context.lineWidth = this.opts.sectorLineWidth;
         } else {
@@ -135,7 +137,7 @@ Map.prototype.drawLines = function() {
             this.context.lineWidth = this.opts.subSectorLineWidth;
         }
 
-	    if (this.isOnMap(this.cornerX(), minSubSectorY)) {
+	    if (this.isOnMap(this.cornerW(), minSubSectorY)) {
             this.context.beginPath();
 	        this.context.moveTo(0+.5, yLoc.y+.5);
 	        this.context.lineTo(this.width+.5, yLoc.y+.5);
@@ -145,7 +147,7 @@ Map.prototype.drawLines = function() {
 	    while (xLoc.x <= this.width) {
             // If the x location falls on a full sector line, draw it with
             // the sector color. Otherwise, use a subsector.
-            if (minSubSectorX % sectorSizeX == 0) {
+            if (minSubSectorX % sectorSize == 0) {
                 this.context.strokeStyle = this.opts.sectorColor;
                 this.context.lineWidth = this.opts.sectorLineWidth;
             } else {
@@ -153,18 +155,18 @@ Map.prototype.drawLines = function() {
                 this.context.lineWidth = this.opts.subSectorLineWidth;
             }
 
-	        if (this.isOnMap(minSubSectorX, this.cornerY())) {
+	        if (this.isOnMap(minSubSectorX, this.cornerH())) {
                 this.context.beginPath();
 		        this.context.moveTo(xLoc.x+.5, 0.5);
 		        this.context.lineTo(xLoc.x+.5, this.height+.5);
 		        this.context.stroke();
 	        }
 
-	        minSubSectorX += subSectorSizeX;
-	        xLoc = this.getDisplayLocation(minSubSectorX, this.cornerY());
+	        minSubSectorX += subSectorSize;
+	        xLoc = this.getDisplayLocation(minSubSectorX, this.cornerH());
 	    }
-	    minSubSectorY += subSectorSizeY;
-	    yLoc = this.getDisplayLocation(this.cornerX(), minSubSectorY);
+	    minSubSectorY += subSectorSize;
+	    yLoc = this.getDisplayLocation(this.cornerW(), minSubSectorY);
     }
 }
 
@@ -185,7 +187,7 @@ Map.prototype.drawBlip = function(x, y, options) {
 	if (opts.shape == "dot") {
 	    this.context.beginPath();
         this.context.arc(loc.x, loc.y,
-                opts.radius * (this.scaleX + this.scaleY) / 2,
+                opts.radius * (this.scaleW + this.scaleH) / 2,
                 0, 2 * Math.PI, true);
 	    this.context.fill();
 	}
@@ -199,25 +201,25 @@ Map.prototype.anchorTarget = function(targetid) {
 }
 
 // Shortcuts!
-Map.prototype.anchorX = function() {
-    return this.getAnchor().x;
+Map.prototype.anchorW = function() {
+    return this.getAnchor()[this.opts.planeW];
 }
 
-Map.prototype.anchorY = function() {
-    return this.getAnchor().y;
+Map.prototype.anchorH = function() {
+    return this.getAnchor()[this.opts.planeH];
 }
 
-Map.prototype.cornerX = function() {
-    return (this.anchorX() - this.width / (2 * this.scaleX));
+Map.prototype.cornerW = function() {
+    return (this.anchorW() - this.width / (2 * this.scaleW));
 }
 
-Map.prototype.cornerY = function() {
-    return (this.anchorY() - this.height / (2 * this.scaleY));
+Map.prototype.cornerH = function() {
+    return (this.anchorH() - this.height / (2 * this.scaleH));
 }
 
 Map.prototype.getDisplayLocation = function(x, y) {
-    return {x: (x - this.cornerX()) * this.scaleX,
-	    y: (y - this.cornerY()) * this.scaleY};
+    return {x: (x - this.cornerW()) * this.scaleW,
+	    y: (y - this.cornerH()) * this.scaleH};
 }
 
 Map.prototype.isOnMap = function(x, y) {
@@ -227,20 +229,20 @@ Map.prototype.isOnMap = function(x, y) {
 }
 
 Map.prototype.getSectorName = function(x, y, z) {
-    return identify(Math.trunc(x/sectorSizeX), greek) + 
-	identify(Math.trunc(y/sectorSizeY), num) +
-	identify(Math.trunc(z/sectorSizeZ), alpha);
+    return identify(Math.trunc(x/sectorSize), greek) + 
+	identify(Math.trunc(y/sectorSize), num) +
+	identify(Math.trunc(z/sectorSize), alpha);
 }
 
 Map.prototype.zoomIn = function(scale) {
     // The "size" of the map decreases as you zoom in.
-    this.sizeX = this.sizeX / scale;
-    this.sizeY = this.sizeY / scale;
+    this.sizeW = this.sizeW / scale;
+    this.sizeH = this.sizeH / scale;
 
     // Therefore, the scale of pixels to meters increases, because you
     // have the same pixels to display fewer meters.
-    this.scaleX = this.scaleX * scale;
-    this.scaleY = this.scaleY * scale;
+    this.scaleW = this.scaleW * scale;
+    this.scaleH = this.scaleH * scale;
 
     // Redraw
     console.log("Redrawing map with zoomed at " + 100 * scale + "%");
@@ -254,6 +256,8 @@ Map.prototype.updateFromData = function(data) {
             var entities = data["entity"];
             for (i in entities) {
                 var entity = entities[i];
+                var entityLoc = {x: entity.location[0],
+                    y: entity.location[1], z: entity.location[2]};
                 if (entity.context[0] == "Ship") {
                     if (entity.id == this.targetid) {
                         this.anchor.x = entity.location[0];
@@ -262,8 +266,8 @@ Map.prototype.updateFromData = function(data) {
                         properties["color"] = "#AAAAAA";
                     }
                     properties = { radius: entity.radius };
-                    minimap.drawBlip(entity.location[0],
-                        entity.location[1], properties);
+                    minimap.drawBlip(entityLoc[this.opts.planeW],
+                        entityLoc[this.opts.planeH], properties);
                 }
             }
         }
