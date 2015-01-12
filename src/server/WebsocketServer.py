@@ -1,6 +1,5 @@
 import sys
 from Client import Client, ClientUpdater
-from SocketNetworker import SocketNetworker
 from SharedClientDataStore import SharedClientDataStore
 import threading
 import socket
@@ -97,7 +96,8 @@ class ClientHandler(WebSocket):
             cookie_id = cherrypy.request.cookie["clientid"].value
             if cookie_id in ClientHandler.clients.keys():
                 self.client = ClientHandler.clients[cookie_id]
-                self.client.reinit(self)
+                self.client.reinit(self.api, None, self, self)
+                self.client.id = cookie_id
                 print("Reconnected cient {}".format(cookie_id))
 
         if not self.client:
@@ -108,6 +108,7 @@ class ClientHandler(WebSocket):
 
         updater = ClientUpdater(self.universe, self.client, self.api)
         self.universe.updaters.append(updater)
+
 
     def closed(self, code, message):
         self.open = False
