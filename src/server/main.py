@@ -77,13 +77,19 @@ ship1 = Ship.Ship(shipConf, universe)
 ship1.name = "Aggressor"
 ship2 = Ship.Ship(shipConf, universe)
 ship2.name = "Victim"
+ship3 = Ship.Ship(shipConf, universe)
+ship3.name = "Cruiser"
 ship1.location = physics.Vector(500,100,0)
 ship1.velocity = physics.Vector(-7,-7,0)
-ship2.location = physics.Vector(-400,1000,0)
+ship2.location = physics.Vector(-400,1000,1000)
 ship2.rotation = physics.Vector(0,0,0)
-ship2.velocity = physics.Vector(5,-20,0)
+ship2.velocity = physics.Vector(5,-20,-50)
+ship3.location = physics.Vector(-2500,1000,0)
+ship3.rotation = physics.Vector(0,0,0)
+ship3.velocity = physics.Vector(200,-20,5)
 universe.add(ship1)
 universe.add(ship2)
+universe.add(ship3)
 
 missile = Missile.Missile(missileConf, universe)
 

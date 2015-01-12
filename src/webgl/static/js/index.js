@@ -15,10 +15,14 @@ $(document).ready(function() {
     animate();
 
     $('#minimap-zoom-in').click(function() {
-        minimap.zoomIn(2);
+        minimapXY.zoomIn(2);
+        minimapYZ.zoomIn(2);
+        minimapXZ.zoomIn(2);
     });
     $('#minimap-zoom-out').click(function() {
-        minimap.zoomIn(0.5);
+        minimapXY.zoomIn(0.5);
+        minimapYZ.zoomIn(0.5);
+        minimapXZ.zoomIn(0.5);
     });
 });
 
@@ -107,8 +111,12 @@ function render() {
 }
 
 $(function() {
-    minimap = new Map($("#minimap")[0], {x: 0, y: 0},
-            {sizeX: 5000, sizeY: 5000})
+    minimapXY = new Map($("#minimap-xy")[0], {x: 0, y: 0, z: 0},
+            {planeW: "x", planeH: "y", sizeW: 5000, sizeH: 5000})
+    minimapYZ = new Map($("#minimap-yz")[0], {x: 0, y: 0, z: 0},
+            {planeW: "y", planeH: "z", sizeW: 5000, sizeH: 5000})
+    minimapXZ = new Map($("#minimap-xz")[0], {x: 0, y: 0, z: 0},
+            {planeW: "x", planeH: "z", sizeW: 5000, sizeH: 5000})
 
     window.client = ScreenClient(function() {
             // Request updates about entities in the Universe.
@@ -116,14 +124,18 @@ $(function() {
 
             // Send entity updates to the minimap.
             window.client.socket.addOnMessage(function(data) {
-                minimap.updateFromData(data);
+                minimapXY.updateFromData(data);
+                minimapYZ.updateFromData(data);
+                minimapXZ.updateFromData(data);
             });
 
             // Trigger map-lock button when pressing enter from the
             // textbox.
             $("#map-lock-target").change(function(e) {
                 console.log(e);
-                minimap.anchorTarget($("#map-lock-target").val());
+                minimapXY.anchorTarget($("#map-lock-target").val());
+                minimapYZ.anchorTarget($("#map-lock-target").val());
+                minimapXZ.anchorTarget($("#map-lock-target").val());
             });
 
             // Lock the minimap automatically if the player is attached

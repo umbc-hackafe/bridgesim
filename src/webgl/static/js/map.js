@@ -222,7 +222,11 @@ Map.prototype.getDisplayLocation = function(x, y) {
 	    y: (y - this.cornerH()) * this.scaleH};
 }
 
-Map.prototype.isOnMap = function(x, y) {
+Map.prototype.isOnMap = function(x, y, size) {
+    if (typeof size == undefined) {
+        size = 0
+    }
+
     var pos = this.getDisplayLocation(x, y);
     return pos.x >= 0 && pos.x < this.width &&
 	pos.y >= 0 && pos.y < this.height;
@@ -251,7 +255,8 @@ Map.prototype.zoomIn = function(scale) {
 
 Map.prototype.updateFromData = function(data) {
     if ("updates" in data && data["updates"]) {
-        minimap.redraw();
+        var that = this
+        this.redraw();
         if ("entity" in data) {
             var entities = data["entity"];
             for (i in entities) {
@@ -266,7 +271,7 @@ Map.prototype.updateFromData = function(data) {
                         properties["color"] = "#AAAAAA";
                     }
                     properties = { radius: entity.radius };
-                    minimap.drawBlip(entityLoc[this.opts.planeW],
+                    that.drawBlip(entityLoc[this.opts.planeW],
                         entityLoc[this.opts.planeH], properties);
                 }
             }

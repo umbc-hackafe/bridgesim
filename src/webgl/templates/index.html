@@ -16,7 +16,22 @@
 
 {% block overlay_body %}
   <div id="minimap-container">
-    <canvas id="minimap" class="map" width="200px" height="200px"/></canvas><br/>
+    <table>
+    <tr>
+      <td>
+    <canvas id="minimap-yz" class="map" width="200px" height="200px"/></canvas><br/>
+      </td>
+      <td>
+    <canvas id="minimap-xy" class="map" width="200px" height="200px"/></canvas><br/>
+      </td>
+    </tr>
+    <tr>
+      <td></td>
+      <td>
+    <canvas id="minimap-xz" class="map" width="200px" height="200px"/></canvas><br/>
+      </td>
+    </tr>
+    </table>
     <button id="minimap-zoom-in">+</button>
     <button id="minimap-zoom-out">-</button>
     <input id="map-lock-target" class="enable-connected" type="number"
