@@ -179,7 +179,6 @@ function Client(host, port, path, doneCB) {
     this.reconnectAttempts = 0;
     this.reconnectWait = 1000;
     this.reconnectTimer = -1;
-
     this.init(host, port, path);
 }
 

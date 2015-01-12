@@ -81,25 +81,6 @@ class ExpansionEncoder(ContextEncoder):
             return {k: getattr(obj, k) for k in obj.__api_readable__ if hasattr(obj, k)}
         return ContextEncoder.default(self, obj)
 
-class CompositeSender:
-    def __init__(self, main, *senders):
-        self.__senders = [main]
-        self.listeners = main.listeners
-
-        for sender in senders:
-            self.add_composite_sender(sender)
-
-    def add_composite_sender(self, sender):
-        self.__senders.append(sender)
-
-    def send(self, *args, **kwargs):
-        for sender in self.__senders:
-            sender.send(*args, **kwargs)
-
-    def close(self, *args, **kwargs):
-        for sender in self.__senders:
-            sender.close(*args, **kwargs)
-
 class ClientHandler(WebSocket):
     clients = {}
     def __init__(self, *args, **kwargs):
@@ -116,12 +97,8 @@ class ClientHandler(WebSocket):
             cookie_id = cherrypy.request.cookie["clientid"].value
             if cookie_id in ClientHandler.clients.keys():
                 self.client = ClientHandler.clients[cookie_id]
-                if self.client.closed:
-                    self.client.reinit(self)
-                    print("Reconnected cient {}".format(cookie_id))
-                else:
-                    self.client.reinit(CompositeSender(self, self.client.sender))
-                    print("Connected additional tab for client {}".format(cookie_id))
+                self.client.reinit(self)
+                print("Reconnected cient {}".format(cookie_id))
 
         if not self.client:
             self.client = Client(self.api, None, self, self)
