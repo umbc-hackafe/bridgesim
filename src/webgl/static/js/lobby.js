@@ -1,3 +1,6 @@
+var shipOptions = {};
+
+
 function handleUpdates(data) {
     if ("updates" in data && data["updates"]) {
         console.log("Got update");
@@ -30,12 +33,13 @@ function loadShips(universeID) {
         console.log(JSON.stringify(entities));
         for (var k in entities) {
             var entity = entities[k];
+            var loadShip = function(entity) {
             console.log(JSON.stringify(entity))
             if (entity.context[0] == "Ship") {
                 entity.name.then(function(name) {
                     console.log("Loading ship: " + name);
-                    $("#ship").append($("<option>").attr("value",
-                                    entity.context).text(name));
+                    shipOptions[name] = entity.context;
+                    $("#ship").append($("<option>").text(name));
                     $("#ship-name").val($("#ship :selected").text());
 
                     $("#ships-waiting").append($("<div>")
@@ -44,6 +48,8 @@ function loadShips(universeID) {
                             );
                 });
             }
+            }
+            loadShip(entity);
         }
     });
 }
@@ -109,13 +115,16 @@ $(function() {
     });
 
     $("#ship").change(function() {
-        var selectedShip = $("#ship :selected").text();
-        console.log("Selecting ship " + selectedShip);
-	    $("#ship-name").val(selectedShip);
+        var shipname = $("#ship :selected").text();
+        console.log("Selecting ship " + shipname);
+	    $("#ship-name").val(shipname);
         $(".ship-required").show();
+        console.log(shipOptions[shipname]);
 
         client.$Client.player.then(function(player) {
-            player.ship = $("#ship :selected").val();
+            // TODO: When the server supports direct context parsing,
+            // send the context alone without the wrapper.
+            player.ship = {context: shipOptions[shipname]};
         });
     });
 

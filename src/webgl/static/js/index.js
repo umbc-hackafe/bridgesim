@@ -131,7 +131,6 @@ $(function() {
             window.client.$Client.player.then(function(player) {
                 player.ship.then(function(ship) {
                     if (ship) {
-                        minimap.anchorTarget(ship);
                         ship.id.then(function(id) {
                             minimap.anchorTarget(id);
                         });
