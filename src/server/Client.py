@@ -128,6 +128,7 @@ class Client:
 
     def destroy(self):
         self.closed = True
+        self.sender.listeners.remove(self.dataReceived)
         self.sender.close()
 
     def sendUpdate(self):
@@ -206,9 +207,7 @@ class ClientUpdater:
             if self.client.updates:
                 self.client.sendUpdate()
         except ClientClosedException:
-            print("Canceling updates; client closed")
-            self.clientWants = {}
-            self.offsets = {}
+            pass
 
     def tick(self):
         try:
@@ -222,7 +221,7 @@ class ClientUpdater:
             self.ticks += 1
 
         except ClientClosedException:
-            print("Error in tick, client closed!")
+            pass
 
 @writable('name', 'ship', 'component')
 class Player:
