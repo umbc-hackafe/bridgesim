@@ -46,9 +46,13 @@ class Client:
                      }
         self.closed = False
 
-    def reinit(self, sender):
-        self.updates = {}
+    def reinit(self, api, address, server, sender):
+        # self.updates = {}
+        self.api = api
+        self.address = address
+        self.server = server
         self.sender = sender
+
         self.sender.listeners.append(self.dataReceived)
         self.closed = False
 
