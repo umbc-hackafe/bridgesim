@@ -145,6 +145,39 @@ class ClientAPI:
     def getTable(self):
         return self.classes
 
+    def resolve_contexts(self, obj, client=None):
+        """
+        Accepts an object and attempts to convert any serialized contexts
+        it contains, of the form {"context": ["Type", 1, ...]}, into their
+        corresponding instances.
+        """
+
+        if not obj:
+            return obj
+
+        if isinstance(obj, str):
+            return obj
+
+        try:
+            if "context" in obj:
+                return self.get(obj["context"], client=client)
+        except TypeError:
+            pass
+
+        try:
+            return {k: self.resolve_contexts(v, client) for k, v in obj.items()}
+        except TypeError:
+            pass
+        except AttributeError:
+            pass
+
+        try:
+            return [self.resolve_contexts(v, client) for v in list(obj)]
+        except TypeError:
+            pass
+
+        return obj
+
     def expand(self, obj):
         """
         Expands an object to expose all its top-level attributes, leaving

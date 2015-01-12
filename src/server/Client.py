@@ -69,7 +69,10 @@ class Client:
                         context = data.get("context", ())
                         args = data.get("args", [])
                         kwargs = data.get("kwargs", {})
-                        
+
+                        args = self.api.resolve_contexts(args, client=self)
+                        kwargs = self.api.resolve_contexts(kwargs, client=self)
+
                         # handle method calls
                         if funcName in info["methods"]:
                             result = self.api.onCall(clsName + "." + funcName,
