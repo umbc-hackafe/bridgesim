@@ -44,19 +44,13 @@ function initClient() {
 
     // Lock the minimap automatically if the player is attached
     // to a ship.
-    minimap.autoAnchorPlayer(window.client);
-
-    window.client.socket.addOnMessage(function(data)
-            {minimap.updateFromData(data);});
+    minimap.getUpdates();
+    minimap.autoAnchorPlayer();
 }
 
 $(function() {
     window.client = ScreenClient(initClient);
 
-    minimap = new Map($("#minimap")[0], {x: 0, y: 0},
+    minimap = new Map(window.client, $("#minimap")[0], {x: 0, y: 0, z: 0},
             {sizeX: 10000, sizeY: 10000}) ;
-    //minimap.drawBlip(500, 1000);
-
-    console.log(minimap.getSectorName(0,0,0));
-    console.log(minimap.getSectorName(5000000,2000000,36000000));
 });

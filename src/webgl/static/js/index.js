@@ -111,24 +111,7 @@ function render() {
 }
 
 $(function() {
-    minimapXY = new Map($("#minimap-xy")[0], {x: 0, y: 0, z: 0},
-            {planeW: "x", planeH: "y", sizeW: 5000, sizeH: 5000})
-    minimapYZ = new Map($("#minimap-yz")[0], {x: 0, y: 0, z: 0},
-            {planeW: "y", planeH: "z", sizeW: 5000, sizeH: 5000})
-    minimapXZ = new Map($("#minimap-xz")[0], {x: 0, y: 0, z: 0},
-            {planeW: "x", planeH: "z", sizeW: 5000, sizeH: 5000})
-
     window.client = ScreenClient(function() {
-            // Request updates about entities in the Universe.
-            window.client.$ClientUpdater.requestUpdates("entity", 15);
-
-            // Send entity updates to the minimap.
-            window.client.socket.addOnMessage(function(data) {
-                minimapXY.updateFromData(data);
-                minimapYZ.updateFromData(data);
-                minimapXZ.updateFromData(data);
-            });
-
             // Trigger map-lock button when pressing enter from the
             // textbox.
             $("#map-lock-target").change(function(e) {
@@ -139,10 +122,13 @@ $(function() {
             });
 
             // Lock the minimap automatically if the player is attached
-            // to a ship.
-            minimapXY.autoAnchorPlayer(window.client);
-            minimapYZ.autoAnchorPlayer(window.client);
-            minimapXZ.autoAnchorPlayer(window.client);
+            // to a ship, and receive entity updates from the server.
+            minimapXY.getUpdates();
+            minimapXY.autoAnchorPlayer();
+            minimapYZ.getUpdates();
+            minimapYZ.autoAnchorPlayer();
+            minimapXZ.getUpdates();
+            minimapXZ.autoAnchorPlayer();
 
             // $("#test-btn").click(function() {
             //     window.client.call("Ship__name", ["Ship", 0, 1], {callback:
@@ -154,4 +140,10 @@ $(function() {
             // });
     });
 
+    minimapXY = new Map(window.client, $("#minimap-xy")[0], {x: 0, y: 0, z: 0},
+            {planeW: "x", planeH: "y", sizeW: 5000, sizeH: 5000})
+    minimapYZ = new Map(window.client, $("#minimap-yz")[0], {x: 0, y: 0, z: 0},
+            {planeW: "y", planeH: "z", sizeW: 5000, sizeH: 5000})
+    minimapXZ = new Map(window.client, $("#minimap-xz")[0], {x: 0, y: 0, z: 0},
+            {planeW: "x", planeH: "z", sizeW: 5000, sizeH: 5000})
 });

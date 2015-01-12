@@ -34,7 +34,8 @@ var greek = "\x03b1\x03b2\x03b3\x03b4\x03b5\x03b6\x03b7\x03b8\x03b9\x03ba\x03bb\
 //
 // # Colors #
 // borderColor  : sets the color of the map's borders
-function Map(canvas, anchor, options) {
+function Map(client, canvas, anchor, options) {
+    this.client = client;
     this.canvas = canvas;
     this.context = canvas.getContext("2d");
     this.anchor = {x: 0, y: 0, z: 0};
@@ -200,10 +201,10 @@ Map.prototype.anchorTarget = function(targetid) {
     this.targetid = targetid;
 }
 
-Map.prototype.autoAnchorPlayer = function(client) {
+Map.prototype.autoAnchorPlayer = function() {
     var that = this;
 
-    client.$Client.player.then(function(player) {
+    this.client.$Client.player.then(function(player) {
         player.ship.then(function(ship) {
             if (ship) {
                 ship.id.then(function(id) {
@@ -266,6 +267,19 @@ Map.prototype.zoomIn = function(scale) {
     // Redraw
     console.log("Redrawing map with zoomed at " + 100 * scale + "%");
     this.redraw();
+}
+
+Map.prototype.getUpdates = function(rate) {
+    if (!rate) {
+        rate = 20;
+    }
+
+    var that = this; // ...
+
+    this.client.$ClientUpdater.requestUpdates("entity", rate);
+    this.client.socket.addOnMessage(function(data) {
+        that.updateFromData(data)
+    });
 }
 
 Map.prototype.updateFromData = function(data) {
