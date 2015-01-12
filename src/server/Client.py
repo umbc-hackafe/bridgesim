@@ -211,14 +211,18 @@ class ClientUpdater:
             self.offsets = {}
 
     def tick(self):
-        toUpdate = []
-        for kind in self.clientWants:
-            if self.clientWants[kind] > 0 and self.ticks % self.clientWants[kind] == self.offsets[kind]:
-                toUpdate.append(kind)
+        try:
+            toUpdate = []
+            for kind in self.clientWants:
+                if self.clientWants[kind] > 0 and self.ticks % self.clientWants[kind] == self.offsets[kind]:
+                    toUpdate.append(kind)
 
-        self.sendUpdates(toUpdate)
+            self.sendUpdates(toUpdate)
 
-        self.ticks += 1
+            self.ticks += 1
+
+        except ClientClosedException:
+            print("Error in tick, client closed!")
 
 @writable('name', 'ship', 'component')
 class Player:
