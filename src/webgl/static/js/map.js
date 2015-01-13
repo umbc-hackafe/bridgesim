@@ -121,16 +121,17 @@ Map.prototype.drawUI = function() {
 Map.prototype.drawLines = function() {
     var minSubSectorX = subSectorSize * (Math.trunc(this.cornerW() /
                 subSectorSize));
-    var minSubSectorY = subSectorSize * (Math.trunc(this.cornerH() /
+    var maxSubSectorY = subSectorSize * (Math.trunc(this.cornerH() /
                 subSectorSize));
     var xLoc = this.getDisplayLocation(minSubSectorX, this.cornerH());
-    var yLoc = this.getDisplayLocation(this.cornerW(), minSubSectorY);
+    var yLoc = this.getDisplayLocation(this.cornerW(), maxSubSectorY);
 
-    while (yLoc.y <= this.height) {
+    while (yLoc.y >= 0) {
+        console.log(yLoc.y, this.height);
 
         // If the y location falls on a full sector line, draw it with
         // the sector color. Otherwise, use a subsector.
-        if (minSubSectorY % sectorSize == 0) {
+        if (maxSubSectorY % sectorSize == 0) {
             this.context.strokeStyle = this.opts.sectorColor;
             this.context.lineWidth = this.opts.sectorLineWidth;
         } else {
@@ -138,7 +139,7 @@ Map.prototype.drawLines = function() {
             this.context.lineWidth = this.opts.subSectorLineWidth;
         }
 
-	    if (this.isOnMap(this.cornerW(), minSubSectorY)) {
+	    if (this.isOnMap(this.cornerW(), maxSubSectorY)) {
             this.context.beginPath();
 	        this.context.moveTo(0+.5, yLoc.y+.5);
 	        this.context.lineTo(this.width+.5, yLoc.y+.5);
@@ -161,13 +162,16 @@ Map.prototype.drawLines = function() {
 		        this.context.moveTo(xLoc.x+.5, 0.5);
 		        this.context.lineTo(xLoc.x+.5, this.height+.5);
 		        this.context.stroke();
-	        }
+	        } else {
+                console.log("Not on map: ",minSubSectorX, this.cornerH());
+            }
 
 	        minSubSectorX += subSectorSize;
 	        xLoc = this.getDisplayLocation(minSubSectorX, this.cornerH());
 	    }
-	    minSubSectorY += subSectorSize;
-	    yLoc = this.getDisplayLocation(this.cornerW(), minSubSectorY);
+	    maxSubSectorY += subSectorSize;
+	    yLoc = this.getDisplayLocation(this.cornerW(), maxSubSectorY);
+        console.log(yLoc.y, this.height);
     }
 }
 
@@ -235,7 +239,7 @@ Map.prototype.cornerH = function() {
 
 Map.prototype.getDisplayLocation = function(x, y) {
     return {x: (x - this.cornerW()) * this.scaleW,
-	    y: (y - this.cornerH()) * this.scaleH};
+	    y: this.height - (y - this.cornerH()) * this.scaleH};
 }
 
 Map.prototype.isOnMap = function(x, y, radius) {
@@ -249,8 +253,8 @@ Map.prototype.isOnMap = function(x, y, radius) {
     var pos = this.getDisplayLocation(x, y);
 
     // Check whether any part of the point would fall within the screen.
-    return pos.x >= -radius && pos.x < this.width+radius &&
-	    pos.y >= -radius && pos.y < this.height+radius;
+    return pos.x >= -radius && pos.x <= this.width+radius &&
+	    pos.y >= -radius && pos.y <= this.height+radius;
 }
 
 Map.prototype.getSectorName = function(x, y, z) {
