@@ -180,7 +180,7 @@ Map.prototype.drawBlip = function(x, y, options) {
     if (options)
 	$.extend(opts, options);
 
-    if (this.isOnMap(x, y)) {
+    if (this.isOnMap(x, y, opts.radius)) {
 	var loc = this.getDisplayLocation(x, y);
 	this.context.strokeStyle = opts.color;
 	this.context.fillStyle = opts.color;
@@ -238,14 +238,19 @@ Map.prototype.getDisplayLocation = function(x, y) {
 	    y: (y - this.cornerH()) * this.scaleH};
 }
 
-Map.prototype.isOnMap = function(x, y, size) {
-    if (typeof size == undefined) {
-        size = 0
+Map.prototype.isOnMap = function(x, y, radius) {
+    if (!radius) {
+        radius = 0;
+    } else {
+        // If a radius is given, then scale it to the screen.
+        radius *= (this.scaleW + this.scaleH) / 2;
     }
 
     var pos = this.getDisplayLocation(x, y);
-    return pos.x >= 0 && pos.x < this.width &&
-	pos.y >= 0 && pos.y < this.height;
+
+    // Check whether any part of the point would fall within the screen.
+    return pos.x >= -radius && pos.x < this.width+radius &&
+	    pos.y >= -radius && pos.y < this.height+radius;
 }
 
 Map.prototype.getSectorName = function(x, y, z) {
@@ -306,6 +311,9 @@ Map.prototype.updateFromData = function(data) {
                         entityLoc[this.opts.planeH], properties);
                 }
             }
+
+            // Redraw the UI, because the blips might overwrite it.
+            this.drawUI();
         }
     }
 }
