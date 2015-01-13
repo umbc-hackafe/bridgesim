@@ -1,5 +1,16 @@
 var shipOptions = {};
 
+function clearShipRoster(element) {
+    console.log("Putting empty list into " + element);
+    element.html("<ul></ul>");
+}
+
+function addNameToShipRoster(name, element) {
+    console.log("Adding player " + name + " to " + element)
+    var playerlist = element.find('ul');
+    console.log(playerlist);
+    playerlist.append("<li>" + name + "</li>");
+}
 
 function handleUpdates(data) {
     if ("updates" in data && data["updates"]) {
@@ -44,8 +55,10 @@ function loadShips(universeID) {
 
                     $("#ships-waiting").append($("<div>")
                             .addClass("ship-crew-box")
-                            .attr("id", "#ship-opt-" + name)
+                            .attr("id", "ship-opt-" + name)
                             );
+                    console.log("#ship-opt-" + name);
+                    clearShipRoster($("#ship-opt-" + name));
                 });
             }
             }
@@ -56,7 +69,7 @@ function loadShips(universeID) {
 
 function loadPlayers() {
     window.client.$Specials.players().then(function(players) {
-        var playerlist = $("#lobby-players").html('<ul></ul>').find('ul');
+        clearShipRoster($("#lobby-players"));
         for (var k in players) {
             var player = players[k];
             console.log(player);
@@ -66,7 +79,7 @@ function loadPlayers() {
                     name = "Unnamed Player";
                 }
                 console.log("Listing player: " + name);
-                playerlist.append("<li>" + name + "</li>");
+                addNameToShipRoster(name, $("#lobby-players"));
             });
         }
     });
@@ -125,6 +138,11 @@ $(function() {
             // TODO: When the server supports direct context parsing,
             // send the context alone without the wrapper.
             player.ship = {context: shipOptions[shipname]};
+
+            player.name.then(function(name) {
+                console.log("Adding " + name + " to #ship-opt-" + shipname);
+                addNameToShipRoster(name, $("#ship-opt-" + shipname));
+            });
         });
     });
 
