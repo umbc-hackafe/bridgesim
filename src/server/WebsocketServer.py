@@ -97,6 +97,9 @@ class ClientHandler(WebSocket):
             cookie_id = cherrypy.request.cookie["clientid"].value
             if cookie_id in ClientHandler.clients.keys():
                 self.client = ClientHandler.clients[cookie_id]
+                if self.client.sender and self.client.sender.open:
+                    self.client.sender.close(1000, "Closing outdated connection")
+                    print(self.client.sender.close)
                 self.client.reinit(self.api, None, self, self)
                 self.client.id = cookie_id
                 print("Reconnected cient {}".format(cookie_id))
