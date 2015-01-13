@@ -184,7 +184,7 @@ function Client(host, port, path, doneCB) {
 
 Client.prototype.doReconnectInterval = function(host, port, path) {
     var client = this;
-    if (!this.socket.open && this.socket.closed) {
+    if (this.reconnect && !this.socket.open && this.socket.closed) {
 	this.socket.wrap(new WebSocket("ws://" + host + ":" + port + (path[0] == "/" ? path : "/" + path)));
 
 	this.reconnectTimer = setTimeout(function() {
@@ -212,7 +212,11 @@ Client.prototype.init = function(host, port, path) {
 
     var addReconnector = function(host, port, path) {
 	client.socket.addOnClose(function(evt) {
-	    client.startReconnect(host, port, path);
+	    if (evt && evt.code == 1001) {
+		console.log("Server has closed! Will not reconnect.");
+	    } else {
+		client.startReconnect(host, port, path);
+	    }
 	});
     };
     addReconnector(host, port, path);
