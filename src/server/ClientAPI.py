@@ -39,23 +39,34 @@ def expose(func=None, label=None, client=False):
             return expose(func, label=label, client=client)
         return partial
 
+def updates(*attrs):
+    def decorator(func):
+        print("{} may have been updated".format(",".join(attrs)))
+        return func
+
+    return decorator
+
 def readable(*attrs):
     def decorator(cls):
-        if not hasattr(cls, "__api_readable__"):
-            setattr(cls, "__api_readable__", set())
-        cls.__api_readable__ |= set(attrs)
+        attr_set = set(attrs)
+        print("Adding attrs {} to class {}".format(attrs, cls))
+        if hasattr(cls, "__api_readable__"):
+            attr_set |= set(cls.__api_readable__)
+
+        setattr(cls, "__api_readable__", attr_set)
 
         return cls
     return decorator
 
 def writable(*attrs):
-    @readable(*attrs)
     def decorator(cls):
-        if not hasattr(cls, "__api_writable__"):
-            setattr(cls, "__api_writable__", [])
+        attr_set = set(attrs)
+        if hasattr(cls, "__api_writable__"):
+            attr_set |= set(cls.__api_writable__)
 
-        cls.__api_writable__.extend(attrs)
-        return cls
+        setattr(cls, "__api_writable__", attr_set)
+
+        return readable(*attrs)(cls)
     return decorator
 
 # There are two parts to this:
@@ -233,6 +244,8 @@ class ClientAPI:
                 else:
                     methods[method.__api_label__]["pass_client"] = False
 
+        cls.__api_registered_base__ = cls
+
         readable = []
         writable = []
         if hasattr(cls, "__api_readable__"):
@@ -253,5 +266,43 @@ class ClientAPI:
             "context": context,
             "methods": methods,
             "readable": readable,
-            "writable": writable
+            "writable": writable,
+            "__old_setattr__": cls.__setattr__
         }
+
+        self.objUpdates[cls] = set()
+
+        if hasattr(cls, "__api_readable__") and not hasattr(cls, "__api_setattr_wrapped__"):
+#            def closure(cls):
+            setattr(cls, "__api_setattr_wrapped__", True)
+            cls.__api_old_setattr = cls.__setattr__
+            def new_setattr(s, name, value):
+                # THIS NEEDS TO HAPPEN IN ANOTHER THREAD
+                # Or at least somewhere that we won't block the sender...
+                # maybe on the network thread
+                if name != "__setattr__" and name in s.__api_readable__ and (not hasattr(s, name) or getattr(s, name) != value):
+                    self.addUpdates(cls, s)
+
+                return self.classes[cls.__name__]["__old_setattr__"](s, name, value)
+            cls.__setattr__ = new_setattr
+
+        # Wrap the constructor so that we can keep track of it easier for fullsyncs
+        if readable or writable:
+            # We don't really care unless it has a readable_or_writable
+            if not hasattr(cls, "__api_init_wrapped__"):
+                # Make sure we don't do it twice, which would be weird
+                setattr(cls, "__api_init_wrapped__", True)
+
+
+                # This closure is necessary; I'm not sure why, but I
+                # don't want to temp the python gods
+                def replace(cls):
+                    old = cls.__init__
+
+                    def new_init(s, *args, **kwargs):
+                        # FIXME: This gets called twice for everything. Ha, good luck!
+                        old(s, *args, **kwargs)
+                        self.addUpdates(s.__api_registered_base__, s)
+
+                    cls.__init__ = new_init
+                replace(cls)
