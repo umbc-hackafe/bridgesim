@@ -30,7 +30,7 @@ class Ship(Entity):
     self.name = "Ship"
     
   def collide(self, other):
-    print("I got hit!")
+#    print("I got hit!")
     if type(other) is Missile:
       self.takeDamage(other.getDamage())
       

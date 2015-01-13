@@ -42,34 +42,37 @@ api = ClientAPI.ClientAPI(ClientAPI.GlobalContext([universe], network))
 api.register(Universe.Universe)
 api.register(Entity.Entity)
 api.register(Ship.Ship)
-api.register(Component.Component)
 api.register(Component.Drive)
 api.register(Component.WeaponsStation)
 api.register(Component.ShieldGenerator)
+api.register(Component.Component)
 api.register(SharedClientDataStore.SharedClientDataStore)
 api.register(Client.ClientUpdater)
 api.register(Client.Client)
 api.register(Client.Player)
 
-table = api.getTable()
-print("==== Function Table ====")
-for clsName, info in table.items():
-  print()
-  print("Class: {}".format(clsName))
-  if not isinstance(info["context"], type):
-    print("  Global: client.${}".format(clsName))
+print("PLAYER", dir(Client.Player))
+print("---")
 
-  if info["methods"]:
-    print("=== Methods ===")
-    for funcName in info["methods"]:
-      print("  * {}()".format(funcName))
-  if info["readable"]:
-    print("=== Attributes ===")
-    for attrName in info["readable"]:
-      if "writable" in info and attrName in info["writable"]:
-        print("  * {} (rw)".format(attrName))
-      else:
-        print("  * {} (r-)".format(attrName))
+table = api.getTable()
+#print("==== Function Table ====")
+#for clsName, info in table.items():
+#  print()
+#  print("Class: {}".format(clsName))
+#  if not isinstance(info["context"], type):
+#    print("  Global: client.${}".format(clsName))
+#
+#  if info["methods"]:
+#    print("=== Methods ===")
+#    for funcName in info["methods"]:
+#      print("  * {}()".format(funcName))
+#  if info["readable"]:
+#    print("=== Attributes ===")
+#    for attrName in info["readable"]:
+#      if "writable" in info and attrName in info["writable"]:
+#        print("  * {} (rw)".format(attrName))
+#      else:
+#        print("  * {} (r-)".format(attrName))
 
 network.start(api)
 
