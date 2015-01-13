@@ -92,8 +92,7 @@ class ClientAPI:
     def __init__(self, globalContext):
         self.classes = {}
         self.globalContext = globalContext
-        self.objUpdates = {}
-        self.hasUpdates = False
+        self.update_listeners = []
 
     def onGet(self, name, ctx, client=None):
         cls, attr = name.split(".")
@@ -156,6 +155,10 @@ class ClientAPI:
     def getTable(self):
         return self.classes
 
+    def dispatch_update(self, kind, obj):
+        for l in self.update_listeners:
+            l(kind, obj)
+
     def resolve_contexts(self, obj, client=None):
         """
         Accepts an object and attempts to convert any serialized contexts
@@ -207,23 +210,6 @@ class ClientAPI:
             result = obj
         return result
 
-    def resetUpdates(self, cls=None):
-        if not cls:
-            self.hasUpdates = False
-            for k in self.objUpdates:
-                self.objUpdates[k] = set()
-        else:
-            self.objUpdates[cls] = set()
-
-    def addUpdates(self, cls, instance):
-        self.objUpdates[cls].add(instance)
-        self.hasUpdates = True
-
-    def getUpdates(self):
-        res = {cls.__name__: list(ins) for cls, ins in self.objUpdates.items()}
-        self.resetUpdates()
-        return res
-
     def register(self, cls):
         if hasattr(cls, "__api_auto__"):
             context = cls.__api_auto__
@@ -252,8 +238,6 @@ class ClientAPI:
             for attrName in cls.__api_readable__:
                 readable.append(attrName)
 
-            self.resetUpdates(cls)
-
         if hasattr(cls, "__api_writable__"):
             for attrName in cls.__api_writable__:
                 writable.append(attrName)
@@ -270,8 +254,6 @@ class ClientAPI:
             "__old_setattr__": cls.__setattr__
         }
 
-        self.objUpdates[cls] = set()
-
         if hasattr(cls, "__api_readable__") and not hasattr(cls, "__api_setattr_wrapped__"):
 #            def closure(cls):
             setattr(cls, "__api_setattr_wrapped__", True)
@@ -281,7 +263,7 @@ class ClientAPI:
                 # Or at least somewhere that we won't block the sender...
                 # maybe on the network thread
                 if name != "__setattr__" and name in s.__api_readable__ and (not hasattr(s, name) or getattr(s, name) != value):
-                    self.addUpdates(cls, s)
+                    self.dispatch_update(cls.__name__, s)
 
                 return self.classes[cls.__name__]["__old_setattr__"](s, name, value)
             cls.__setattr__ = new_setattr
@@ -302,7 +284,7 @@ class ClientAPI:
                     def new_init(s, *args, **kwargs):
                         # FIXME: This gets called twice for everything. Ha, good luck!
                         old(s, *args, **kwargs)
-                        self.addUpdates(s.__api_registered_base__, s)
+                        self.dispatch_update(s.__api_registered_base__.__name__, s)
 
                     cls.__init__ = new_init
                 replace(cls)

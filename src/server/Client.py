@@ -3,18 +3,6 @@ import random
 import traceback
 from ClientAPI import BaseContext, expose, readable, writable, autocontext
 
-ALL_KINDS = (
-    "entity",
-    "comms",
-    "weapons",
-    "engineer",
-    "helm",
-    "ship",
-    "meta",
-    "universe",
-    "store"
-)
-
 class ClientClosedException(Exception):
     pass
 
@@ -47,7 +35,6 @@ class Client:
         self.closed = False
 
     def reinit(self, api, address, server, sender):
-        # self.updates = {}
         self.api = api
         self.address = address
         self.server = server
@@ -117,14 +104,10 @@ class Client:
     def queueUpdate(self, kind, *data):
         if self.closed:
             raise ClientClosedException()
-        if kind not in self.updates:
+        if data and kind not in self.updates:
             self.updates[kind] = []
 
-        if kind == "entity":
-            self.updates[kind].extend(data)
-        if kind == "store":
-            self.updates[kind].extend(data)
-        # TODO add the remaining kinds of updates
+        self.updates[kind].extend(data)
 
     def destroy(self):
         self.closed = True
@@ -147,6 +130,7 @@ class ClientUpdater:
         self.client = client
         self.client.updater = self
         self.api = api
+        self.api.update_listeners.append(self.onUpdate)
 
         self.ticks = 0
 
@@ -156,9 +140,12 @@ class ClientUpdater:
         # {"kind": <offset>}
         self.offsets = {}
 
+        # {"kind": <set>}
+        self.updates = {}
+
     @expose
     def fullSync(self):
-        self.sendUpdates(ALL_KINDS)
+        self.sendUpdates(["*"])
 
     @expose
     def stopUpdates(self, kind):
@@ -172,36 +159,24 @@ class ClientUpdater:
             # steady usage of networking
             self.offsets[kind] = random.randrange(frequency)
 
-    def sendUpdates(self, kinds):
-        for kind in kinds:
-            if kind == "entity":
-                for universe in self.universes:
-                    for entity in universe.entities.values():
-                        self.client.queueUpdate(kind, self.client.api.expand(entity))
-            elif kind == "comms":
-                pass
-            elif kind == "weapons":
-                pass
-            elif kind == "engineer":
-                pass
-            elif kind == "helm":
-                pass
-            elif kind == "ship":
-                pass
-            elif kind == "meta":
-                pass
-            elif kind == "universe":
-                pass
-            elif kind == "store":
-                for update in self.client.server.store.get_updates(self.client):
-                    if update:
-                        self.client.queueUpdate(kind, update)
-                self.client.server.store.dequeue_update(None, self.client)
+        if kind not in self.updates:
+            self.updates[kind] = set()
 
-        if self.api.hasUpdates:
-            for cls, members in self.api.getUpdates().items():
-                for m in members:
-                    self.client.queueUpdate(cls, self.api.expand(m))
+    def onUpdate(self, kind, obj):
+        if kind not in self.updates:
+            self.updates[kind] = set()
+        self.updates[kind].add(obj)
+
+    def sendUpdates(self, kinds):
+        if kinds == ["*"]:
+            for kind in self.updates:
+                self.client.queueUpdate(kind, *[self.client.api.expand(obj) for obj in self.updates[kind]])
+                del self.updates[kind]
+        else:
+            for kind in kinds:
+                if kind in self.updates and self.updates[kind]:
+                    self.client.queueUpdate(kind, *[self.client.api.expand(obj) for obj in self.updates[kind]])
+                    del self.updates[kind]
 
         try:
             if self.client.updates:
