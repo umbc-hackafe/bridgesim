@@ -57,7 +57,10 @@ dimensionality"""
 
   def __eq__(self, nvec):
     """Test equality between two vectors."""
-    return self.dimensions == nvec.dimensions
+    if hasattr(nvec, "dimensions"):
+        return self.dimensions == nvec.dimensions
+    else:
+        return self.dimensions == list(nvec)
 
   def __neg__(self):
     """Negate the vector."""
