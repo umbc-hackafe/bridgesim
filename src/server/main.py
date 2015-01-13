@@ -91,13 +91,6 @@ universe.add(ship1)
 universe.add(ship2)
 universe.add(ship3)
 
-missile = Missile.Missile(missileConf, universe)
-
-for i in ship1.components.values():
-  if i.type == "WeaponsStation":
-    i.energy = 1
-    i.load(missile)
-
 if "-v" in sys.argv:
   screen.fill((255,255,255))
 
