@@ -106,25 +106,32 @@ universe.collide()
 universe.tock()
 
 last = time.time()
-while True:
-  length = time.time()-last
-  if "-f" in sys.argv:
-    print("Frame rate: %.2f" % (1/length))
-  data = universe.tick(length)
-#  data = universe.tick(.03)
-  last = time.time()
-  if "-v" in sys.argv:
-    screen.fill((255,255,255))
-    for i in data:
-      pygame.draw.circle(screen, i[4], (int((i[0]-i[2])*SCALEFACTOR),int((i[1]-i[2])*SCALEFACTOR)), int(i[2]*SCALEFACTOR))
-      text = basicFont.render(i[3], True, (0,0,0))
-      textRect = text.get_rect()
-      textRect.centerx = int((i[0]-i[2])*SCALEFACTOR)
-      textRect.centery = int((i[1]-i[2])*SCALEFACTOR)-15
-      screen.blit(text, textRect)
-    pygame.display.flip()
-  universe.collide()
-  universe.tock()
-#  print("Sleeping:", time.time()-last)
-  time.sleep(max((1/frameRate)-(time.time()-last),0))
-  
+
+running = True
+
+while running:
+  try:
+    length = time.time()-last
+    if "-f" in sys.argv:
+      print("Frame rate: %.2f" % (1/length))
+    data = universe.tick(length)
+    #  data = universe.tick(.03)
+    last = time.time()
+    if "-v" in sys.argv:
+      screen.fill((255,255,255))
+      for i in data:
+        pygame.draw.circle(screen, i[4], (int((i[0]-i[2])*SCALEFACTOR),int((i[1]-i[2])*SCALEFACTOR)), int(i[2]*SCALEFACTOR))
+        text = basicFont.render(i[3], True, (0,0,0))
+        textRect = text.get_rect()
+        textRect.centerx = int((i[0]-i[2])*SCALEFACTOR)
+        textRect.centery = int((i[1]-i[2])*SCALEFACTOR)-15
+        screen.blit(text, textRect)
+      pygame.display.flip()
+    universe.collide()
+    universe.tock()
+    #  print("Sleeping:", time.time()-last)
+    time.sleep(max((1/frameRate)-(time.time()-last),0))
+  except KeyboardInterrupt:
+    print("CLOSING")
+    running = False
+    network.stop()

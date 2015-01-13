@@ -15,9 +15,10 @@ from ws4py.websocket import WebSocket
 import jinja2
 
 cherrypy.config.update( {
-	'server.socket_port': 9000,
-	'server.socket_host':'0.0.0.0',
-        'DEBUG': True
+    'server.socket_port': 9000,
+    'server.socket_host':'0.0.0.0',
+    'engine.SIGTERM': False,
+    'DEBUG': True
 })
 WebSocketPlugin(cherrypy.engine).subscribe()
 cherrypy.tools.websocket = WebSocketTool()
@@ -157,18 +158,26 @@ class NetworkServer:
         ClientHandler.store = self.store
         self.clients = ClientHandler.clients
 
+    def stop(self):
+        for client in self.clients.values():
+            if not client.closed:
+                client.sender.close(1001, "Server is shutting down.")
+        cherrypy.engine.stop()
+
     def run(self):
-            cherrypy.quickstart(Root(), '/', config={
-				'/client': {
-					'tools.websocket.on': True,
-					'tools.websocket.handler_cls': ClientHandler
-				},
-				'/': {
-					'tools.staticdir.on' : True,
-				    'tools.staticdir.dir' : os.path.join( os.getcwd(), '../webgl/static/' ),
-	    			'tools.staticdir.index' : 'index.html'
-				}
-			});
+        cherrypy.tree.mount(Root(), '/', config={
+            '/client': {
+                'tools.websocket.on': True,
+                'tools.websocket.handler_cls': ClientHandler
+            },
+            '/': {
+                'tools.staticdir.on' : True,
+                'tools.staticdir.dir' : os.path.join( os.getcwd(), '../webgl/static/' ),
+                'tools.staticdir.index' : 'index.html'
+            }
+        })
+        cherrypy.engine.start()
+        cherrypy.engine.block()
 
     def start(self, api):
         ClientHandler.api = api
