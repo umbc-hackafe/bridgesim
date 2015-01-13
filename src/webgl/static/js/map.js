@@ -293,13 +293,15 @@ Map.prototype.updateFromData = function(data) {
                 var entityLoc = {x: entity.location[0],
                     y: entity.location[1], z: entity.location[2]};
                 if (entity.context[0] == "Ship") {
+
+                    properties = { radius: entity.radius };
+
                     if (entity.id == this.targetid) {
                         this.anchor.x = entity.location[0];
                         this.anchor.y = entity.location[1];
                         this.anchor.z = entity.location[2];
-                        properties["color"] = "#AAAAAA";
+                        properties["color"] = "#eee";
                     }
-                    properties = { radius: entity.radius };
                     that.drawBlip(entityLoc[this.opts.planeW],
                         entityLoc[this.opts.planeH], properties);
                 }
