@@ -249,10 +249,9 @@ $(function() {
     });
 
     window.client = ScreenClient(function() {
-	    loadUniverses();
+	loadUniverses();
         loadPlayers();
+	window.client.socket.addOnMessage(handleUpdates);
+	window.client.$ClientUpdater.requestUpdates("Player", 50);
     });
-
-    window.client.socket.addOnMessage(handleUpdates);
-    window.client.$ClientUpdater.requestUpdates("Player", 50);
 });
