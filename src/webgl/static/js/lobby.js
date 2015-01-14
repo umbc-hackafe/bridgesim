@@ -13,6 +13,7 @@ function handleUpdates(data) {
 function loadUniverses() {
     window.client.$Specials.universes().then(function(data) {
 	    window.universes = data;
+        var waitingPromises = window.universes.length;
 	    for (k in window.universes) {
 		    var universe = window.universes[k];
             universe.name.then(function(name) {
@@ -21,10 +22,29 @@ function loadUniverses() {
                 var id = universe.context[1];
                 console.log("ID " + id);
                 $("#universe").append($("<option>").attr("value",
-                            id).text(name))
+                            id).text(name));
+
+                // Keep track of the number of universes that have been
+                // loaded, and if they are done, check to see if the
+                // player has one set already. If so, select that
+                // universe.
+                waitingPromises--;
+                if (waitingPromises == 0) {
+                    window.client.$Client.player.then(function(myplayer) {
+                        if(myplayer)
+                            myplayer.universe.then(function(universe) {
+                                if (universe) {
+                                    $("#universe").val(universe.context[1]);
+                                    $("#universe").change();
+                                }
+                            });
+                    });
+                }
             });
 	    }
+
     });
+
 }
 
 function loadShips(universeID) {
@@ -33,23 +53,24 @@ function loadShips(universeID) {
         console.log(JSON.stringify(entities));
         for (var k in entities) {
             var entity = entities[k];
-            var loadShip = function(entity) {
-            console.log(JSON.stringify(entity))
-            if (entity.context[0] == "Ship") {
-                entity.name.then(function(name) {
+            //var loadShip = function(entity) {
+                if (entity.context[0] == "Ship") {
+                    entity.name.then(function(name) {
                     console.log("Loading ship: " + name);
                     shipOptions[name] = entity.context;
-                    $("#ship").append($("<option>").text(name));
+                    $("#ship").append($("<option>").attr("value",
+                                entity.context[2]).text(name));
                     $("#ship-name").val($("#ship :selected").text());
 
                     $("#ships-waiting").append($("<div>")
                             .addClass("ship-crew-box")
                             .attr("id", "#ship-opt-" + name)
-                            );
-                });
-            }
-            }
-            loadShip(entity);
+                        );
+
+                    });
+                }
+            //}
+            //loadShip(entity);
         }
     });
 }
@@ -112,8 +133,19 @@ $(function() {
 
 
     $("#universe").change(function() {
+        // Get the universe ID from the selector, and set the player's
+        // universe to it.
         var universeid = $("#universe :selected").attr("value");
+        console.log(universeid);
+        client.$Client.player.then(function(player) {
+            console.log("Setting player universe");
+            player.universe = {context: ["Universe", universeid]};
+        });
+
+        // Show any elements that required the universe.
         $(".universe-required").show();
+
+        // Load the ships from the selected universe.
         loadShips(universeid);
     });
 

@@ -198,7 +198,7 @@ class ClientUpdater:
         except ClientClosedException:
             pass
 
-@writable('name', 'ship', 'component')
+@writable('universe', 'name', 'ship', 'component')
 class Player:
     class Context(BaseContext):
         def __init__(self, instance=None, serial=None):
