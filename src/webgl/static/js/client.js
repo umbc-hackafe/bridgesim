@@ -187,6 +187,7 @@ Client.prototype.doReconnectInterval = function(host, port, path) {
     if (this.reconnect && !this.socket.open && this.socket.closed) {
 	this.socket.wrap(new WebSocket("ws://" + host + ":" + port + (path[0] == "/" ? path : "/" + path)));
 
+	console.log("Trying again in " + (this.reconnectWait/1000) + "s...");
 	this.reconnectTimer = setTimeout(function() {
 	    client.doReconnectInterval(host, port, path);
 	}, this.reconnectWait);
@@ -195,6 +196,8 @@ Client.prototype.doReconnectInterval = function(host, port, path) {
 
 	if (this.reconnectAttempts > 5 && this.reconnectAttempts <= 13)
 	    this.reconnectWait *= 2;
+    } else if (this.socket.open && !this.socket.closed) {
+	console.log("Reconnected!");
     }
 };
 
