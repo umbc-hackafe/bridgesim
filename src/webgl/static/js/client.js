@@ -524,9 +524,9 @@ ObjectCache.prototype.registerClass = function(name, readable, writable){
 
 ObjectCache.prototype.handleUpdates = function(data) {
     if ("updates" in data && data["updates"]) {
-	if ("entity" in data) {
-	    for (var k in data["entity"]) {
-		var entity = data["entity"][k];
+	if ("Entity" in data) {
+	    for (var k in data["Entity"]) {
+		var entity = data["Entity"][k];
 		var hash = hashContext(entity["context"]);
 		this.states[hash.bucket][hash.key] = entity;
 	    }

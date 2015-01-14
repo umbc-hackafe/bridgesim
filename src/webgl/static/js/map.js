@@ -127,8 +127,6 @@ Map.prototype.drawLines = function() {
     var yLoc = this.getDisplayLocation(this.cornerW(), maxSubSectorY);
 
     while (yLoc.y >= 0) {
-        console.log(yLoc.y, this.height);
-
         // If the y location falls on a full sector line, draw it with
         // the sector color. Otherwise, use a subsector.
         if (maxSubSectorY % sectorSize == 0) {
@@ -163,7 +161,7 @@ Map.prototype.drawLines = function() {
 		        this.context.lineTo(xLoc.x+.5, this.height+.5);
 		        this.context.stroke();
 	        } else {
-                console.log("Not on map: ",minSubSectorX, this.cornerH());
+                // console.log("Not on map: ",minSubSectorX, this.cornerH());
             }
 
 	        minSubSectorX += subSectorSize;
@@ -171,7 +169,6 @@ Map.prototype.drawLines = function() {
 	    }
 	    maxSubSectorY += subSectorSize;
 	    yLoc = this.getDisplayLocation(this.cornerW(), maxSubSectorY);
-        console.log(yLoc.y, this.height);
     }
 }
 
@@ -197,7 +194,7 @@ Map.prototype.drawBlip = function(x, y, options) {
 	    this.context.fill();
 	}
     } else {
-	console.log("Not on map");
+	    // console.log("Not on map");
     }
 }
 
@@ -285,7 +282,7 @@ Map.prototype.getUpdates = function(rate) {
 
     var that = this; // ...
 
-    this.client.$ClientUpdater.requestUpdates("entity", rate);
+    this.client.$ClientUpdater.requestUpdates("Entity", rate);
     this.client.socket.addOnMessage(function(data) {
         that.updateFromData(data)
     });
@@ -295,8 +292,8 @@ Map.prototype.updateFromData = function(data) {
     if ("updates" in data && data["updates"]) {
         var that = this
         this.redraw();
-        if ("entity" in data) {
-            var entities = data["entity"];
+        if ("Entity" in data) {
+            var entities = data["Entity"];
             for (i in entities) {
                 var entity = entities[i];
                 var entityLoc = {x: entity.location[0],

@@ -30,7 +30,7 @@ function registerWithServer() {
 
 function initClient() {
     //window.client.init(location.hostname, 9000, "/client");
-    window.client.$ClientUpdater.requestUpdates("entity", 10);
+    window.client.$ClientUpdater.requestUpdates("Entity", 10);
 
     window.client.socket.addOnOpen(function(evt) {
 	    registerWithServer();

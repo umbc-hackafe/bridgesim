@@ -16,7 +16,7 @@ function resize() {
 
 function initClient() {
     //window.client.init(location.hostname, 9000, "/client");
-    window.client.$ClientUpdater.requestUpdates("entity", 10)
+    window.client.$ClientUpdater.requestUpdates("Entity", 10)
 
     window.client.socket.addOnMessage(function(data) {
         minimap.updateFromData(data);
