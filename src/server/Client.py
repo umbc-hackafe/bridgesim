@@ -114,10 +114,12 @@ class Client:
         self.sender.listeners.remove(self.dataReceived)
         self.sender.close()
 
-    def sendUpdate(self):
+    def sendUpdate(self, fullsync=False):
         if self.closed:
             raise ClientClosedException()
         if self.updates:
+            if fullsync:
+                self.updates['fullsync'] = True
             self.updates['updates'] = True
             self.sender.send(self.updates)
         self.updates = {}
@@ -144,8 +146,12 @@ class ClientUpdater:
 
     @expose
     def fullSync(self):
+        previous_requested = dict(self.clientWants)
+        self.clientWants = {}
+        self.client.syncing = True
         self.api.resend_updates(self.onUpdate)
-        self.sendUpdates(["*"])
+        self.sendUpdates(["*"], fullsync=True)
+        self.clientWants = previous_requested
 
     @expose
     def stopUpdates(self, kind):
@@ -167,7 +173,7 @@ class ClientUpdater:
             self.updates[kind] = set()
         self.updates[kind].add(obj)
 
-    def sendUpdates(self, kinds):
+    def sendUpdates(self, kinds, fullsync=False):
         if kinds == ["*"]:
             for kind, update in list(self.updates.items()):
                 self.client.queueUpdate(kind, *[self.client.api.expand(obj) for obj in update])
@@ -180,7 +186,7 @@ class ClientUpdater:
 
         try:
             if self.client.updates:
-                self.client.sendUpdate()
+                self.client.sendUpdate(fullsync)
         except ClientClosedException:
             pass
 

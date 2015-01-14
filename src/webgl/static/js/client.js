@@ -232,22 +232,26 @@ Client.prototype.init = function(host, port, path) {
 	    client.reconnectWait = 1000;
 	}
 
-	client.call("functions", null, {
-	    callback: function(data) {
-		client.loadFunctions(data.result);
-		client.call("specials", null, {
-		    callback: function(data) {
-			client.loadSpecials(data.result);
-			client.call("whoami", null, {
-			    callback: function(data) {
-				client.id = data.result;
-				if (client.doneCB) client.doneCB();
-			    }
-			});
-		    }
-		});
-	    }
+	client.cache = new ObjectCache(client, client.socket, function() {
+	    client.call("functions", null, {
+		callback: function(data) {
+		    client.loadFunctions(data.result);
+		    client.call("specials", null, {
+			callback: function(data) {
+			    client.loadSpecials(data.result);
+			    client.call("whoami", null, {
+				callback: function(data) {
+				    client.id = data.result;
+				    console.log("Done initializing client!");
+				    if (client.doneCB) client.doneCB();
+				}
+			    });
+			}
+		    });
+		}
+	    });
 	});
+	client.call("ClientUpdater__fullSync", null);
     });
 };
 
@@ -307,7 +311,6 @@ Client.prototype.loadSpecials = function(list) {
 
 Client.prototype.loadFunctions = function(map) {
     var client = this;
-    this.cache = new ObjectCache(this, this.socket);
     this.proxyClasses = {};
 
     for (var className in map) {
@@ -454,11 +457,13 @@ function hashContext(context) {
     }
 }
 
-function ObjectCache(client, socket) {
+function ObjectCache(client, socket, onDone) {
     this.client = client;
     this.socket = socket;
 
     this.states = {};
+    this.synced = false;
+    this.onDone = onDone;
 
     // I have to do this
     // because
@@ -473,7 +478,7 @@ function ObjectCache(client, socket) {
     // that makes sense
     // right?
     var that = this;
-    socket.addOnMessage(function(data) {that.handleUpdates(data);});
+    this.socket.addOnMessage(function(data) {that.handleUpdates(data);});
 }
 
 ObjectCache.prototype.set = function(context, cls, attr, val) {
@@ -504,21 +509,13 @@ ObjectCache.prototype.get = function(context, cls, attr) {
     if (hash.bucket in this.states) {
 	if ((hash.key) in this.states[hash.bucket]) {
 	    if (attr in this.states[hash.bucket][hash.key]) {
-		return new Promise(function(resolve) {
-		    resolve(that.client.proxyContexts(that.states[hash.bucket][hash.key][attr]));
-		});
+		return this.client.proxyContexts(this.states[hash.bucket][hash.key][attr]);
 	    }
 	}
     }
 
-    return new Promise(function(resolve) {
-	that.client.call(cls + "__" + attr, context, {
-	    callback: function(data) {
-		that.set(context, cls, attr, data.result);
-		resolve(that.client.proxyContexts(data.result));
-	    }
-	});
-    });
+    console.warn("Did not find specified key", attr, "in context", context, "(cls=", cls, ")");
+    return null;
 }
 
 ObjectCache.prototype.registerClass = function(name, readable, writable){ 
@@ -526,34 +523,32 @@ ObjectCache.prototype.registerClass = function(name, readable, writable){
 }
 
 ObjectCache.prototype.handleUpdates = function(data) {
+    console.log("Got updates", data);
     if ("updates" in data && data["updates"]) {
-	if ("Entity" in data) {
-	    for (var k in data["Entity"]) {
-		var entity = data["Entity"][k];
-		var hash = hashContext(entity["context"]);
-		this.states[hash.bucket][hash.key] = entity;
-	    }
-	} else if ("store" in data) {
-	    for (var i in data["store"]) {
-		var update = data["store"][i];
-		$.extend(this.states["SharedClientDataStore"][0]["data"], update);
-	    }
-	} else {
-	    for (var k in data) {
-		if (k != "updates") {
-		    for (var i in data[k]) {
-			if ("context" in data[k][i]) {
-			    var hash = hashContext(data[k][i].context);
-			    if (hash == 0) {
-				hash = {bucket: k, key: 0};
-			    }
-			    if (!(hash.key in this.states[hash.bucket]))
-				this.states[hash.bucket][hash.key] = {};
-
-			    $.extend(this.states[hash.bucket][hash.key], data[k][i]);
+	for (var k in data) {
+	    if (k != "updates" && data.hasOwnProperty(k)) {
+		console.log("Handling", k, "updates");
+		for (var i in data[k]) {
+		    if ("context" in data[k][i]) {
+			var hash = hashContext(data[k][i].context);
+			if (hash == 0) {
+			    hash = {bucket: k, key: 0};
 			}
+			if (!(hash.bucket in this.states))
+			    this.states[hash.bucket] = {};
+
+			if (!(hash.key in this.states[hash.bucket]))
+			    this.states[hash.bucket][hash.key] = {};
+			
+			$.extend(this.states[hash.bucket][hash.key], data[k][i]);
 		    }
 		}
+	    }
+	}
+	if ("fullsync" in data && data["fullsync"]) {
+	    console.log("Got a fullsync!");
+	    if (this.onDone) {
+		this.onDone();
 	    }
 	}
     }
