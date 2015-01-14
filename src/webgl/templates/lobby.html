@@ -44,11 +44,13 @@
 	    <label for="role-engineer">Engineering<input type="checkbox" class="role" id="role-engineer" name="role" data-role="engineer" data-max-players="1"/></label>
 	  </div>
     </div>
-      <div class="role-required">
+      <div class="role-required" id="ready-box">
 	<label for="ready">Ready: <input type="checkbox" id="ready"/></label>
       </div>
-      <div class="all-ready-required role-helm-required">
-	<button id="enter-game">Begin</button>
+      <!-- <div class="all-ready-required role-helm-required"> -->
+      <div class="role-required">
+	    <button id="enter-game" class="all-ready-enable">Begin</button>
+      </div>
     </div>
   </form>
 

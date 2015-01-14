@@ -92,6 +92,8 @@ $(function() {
     $(".role-required").hide();
     $(".role-helm-required").hide();
 
+    $("all-ready-enable").attr("disabled", true)
+
     $("#player-name").change(function() {
         // On an enter key pressed...
         // Set the player's name according to the value. It will be
@@ -175,13 +177,30 @@ $(function() {
 	    });
 	}
 
-	console.log("blah");
 	if ($("#lobby-form input[name=role]:checked").length) {
 	    $(".role-required").show();
 	} else {
 	    $(".role-required").hide();
 	    $("#ready").attr("checked", false);
 	}
+    });
+
+    // Cause the ready checkbox to trigger the change function.
+    $("#ready-box").trigger("change");
+    $("#ready-box").change(function() {
+        // Check if the box is checked. If so, enable the ready button.
+        // TODO: in the future, this should check all players' ready
+        // statuses
+        var disable = true;
+        if ($("#ready-box input:checkbox:checked").length > 0) {
+            disable = false;
+        }
+        $(".all-ready-enable").attr("disabled", disable);
+    });
+
+    $("#enter-game").click(function() {
+        window.location.href = "/weapons";
+        return false;
     });
 
     window.client = ScreenClient(function() {
