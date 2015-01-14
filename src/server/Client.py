@@ -130,21 +130,21 @@ class ClientUpdater:
         self.client = client
         self.client.updater = self
         self.api = api
-        self.api.update_listeners.append(self.onUpdate)
 
         self.ticks = 0
 
         # {"kind": <frequency>}
         self.clientWants = {}
-
         # {"kind": <offset>}
         self.offsets = {}
-
         # {"kind": <set>}
         self.updates = {}
 
+        self.api.update_subscribe(self.onUpdate)
+
     @expose
     def fullSync(self):
+        self.api.resend_updates(self.onUpdate)
         self.sendUpdates(["*"])
 
     @expose
@@ -169,8 +169,8 @@ class ClientUpdater:
 
     def sendUpdates(self, kinds):
         if kinds == ["*"]:
-            for kind in self.updates:
-                self.client.queueUpdate(kind, *[self.client.api.expand(obj) for obj in self.updates[kind]])
+            for kind, update in list(self.updates.items()):
+                self.client.queueUpdate(kind, *[self.client.api.expand(obj) for obj in update])
                 del self.updates[kind]
         else:
             for kind in kinds:

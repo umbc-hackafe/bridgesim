@@ -93,6 +93,7 @@ class ClientAPI:
         self.classes = {}
         self.globalContext = globalContext
         self.update_listeners = []
+        self.instances = {}
 
     def onGet(self, name, ctx, client=None):
         cls, attr = name.split(".")
@@ -155,8 +156,25 @@ class ClientAPI:
     def getTable(self):
         return self.classes
 
+    def resend_updates(self, listener):
+        for kind, obj_set in list(self.instances.items()):
+            for obj in set(obj_set):
+                listener(kind, obj)
+
+    def update_subscribe(self, listener):
+        self.update_listeners.append(listener)
+        self.resend_updates(listener)
+
+    def update_unsubscribe(self, listener):
+        if listener in self.update_listeners:
+            self.update_listeners.remove(listener)
+
     def dispatch_update(self, kind, obj):
-        for l in self.update_listeners:
+        if kind not in self.instances:
+            self.instances[kind] = set()
+        self.instances[kind].add(obj)
+
+        for l in list(self.update_listeners):
             l(kind, obj)
 
     def resolve_contexts(self, obj, client=None):
