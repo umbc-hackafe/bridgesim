@@ -34,14 +34,14 @@
       </select></label>
     </div>
     <div class="ship-required">
-	  <label for="ship-name">Name: <input type="text" id="ship-name" value="SPACESHIP!"/></label>
+	  <label class="role-helm-required" for="ship-name">Name: <input type="text" id="ship-name" value="SPACESHIP!"/></label>
 	  <div id="role-select">
-	    <label for="role-helm">Helm<input type="checkbox" class="role" id="role-helm" name="role" data-role="helm" data-max-players="1"/></label>
-	    <label for="role-weapons">Weapons<input type="checkbox" class="role" id="role-weapons" name="role" data-role="weapons"/></label>
+	    <label for="role-helm">Helm<input type="checkbox" class="role" id="role-helm" name="role" value="helm" data-max-players="1"/></label>
+	    <label for="role-weapons">Weapons<input type="checkbox" class="role" id="role-weapons" name="role" value="weapons"/></label>
 	    <!--Sub-Roles (arsenal selection) goes here?-->
-	    <label for="role-science">Science<input type="checkbox" class="role" id="role-science" name="role" data-role="science"/></label>
-	    <label for="role-comms">Communications<input type="checkbox" class="role" id="role-comms" name="role" data-role="comms"/></label>
-	    <label for="role-engineer">Engineering<input type="checkbox" class="role" id="role-engineer" name="role" data-role="engineer" data-max-players="1"/></label>
+	    <label for="role-science">Science<input type="checkbox" class="role" id="role-science" name="role" value="science"/></label>
+	    <label for="role-comms">Communications<input type="checkbox" class="role" id="role-comms" name="role" value="comms"/></label>
+	    <label for="role-engineer">Engineering<input type="checkbox" class="role" id="role-engineer" name="role" value="engineer" data-max-players="1"/></label>
 	  </div>
     </div>
       <div class="role-required" id="ready-box">

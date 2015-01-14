@@ -91,6 +91,7 @@ $(function() {
     $(".ship-required").hide();
     $(".role-required").hide();
     $(".role-helm-required").hide();
+    $(".some-role-helm-required").hide();
 
     $("all-ready-enable").attr("disabled", true)
 
@@ -183,6 +184,18 @@ $(function() {
 	    $(".role-required").hide();
 	    $("#ready").attr("checked", false);
 	}
+
+    $("#lobby-form input[name=role]:checked").each(function() {
+        var role = $(this).attr("value");
+        console.log("Showing role: " + role);
+        $(".role-" + role + "-required").show();
+    });
+    $("#lobby-form input[name=role]:not(:checked)").each(function() {
+        var role = $(this).attr("value");
+        console.log("Unshowing role: " + role);
+        $(".role-" + role + "-required").hide();
+    });
+
     });
 
     // Cause the ready checkbox to trigger the change function.
