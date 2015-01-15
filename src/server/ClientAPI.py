@@ -221,12 +221,22 @@ class ClientAPI:
         if hasattr(obj, "__api_readable__"):
             result = {
                 k: getattr(obj, k) for k in obj.__api_readable__
-                }
+            }
             if hasattr(obj, "Context"):
                 result.update({"context": obj.Context(instance=obj).serialized()})
         else:
             result = obj
         return result
+
+    def find_base_class(self, cls):
+        for base in cls.__bases__:
+            if base == object or not hasattr(base, "__api_registered_base__"):
+                return cls
+            else:
+                res = self.find_base_class(base)
+                if res is not None:
+                    return res
+        return None
 
     def register(self, cls):
         if hasattr(cls, "__api_auto__"):
@@ -289,20 +299,22 @@ class ClientAPI:
         # Wrap the constructor so that we can keep track of it easier for fullsyncs
         if readable or writable:
             # We don't really care unless it has a readable_or_writable
-            if not hasattr(cls, "__api_init_wrapped__"):
-                # Make sure we don't do it twice, which would be weird
-                setattr(cls, "__api_init_wrapped__", True)
 
+            if self.find_base_class(cls) == cls:
+                if not hasattr(cls, "__api_init_wrapped__"):
+                    # Make sure we don't do it twice, which would be weird
+                    setattr(cls, "__api_init_wrapped__", True)
 
-                # This closure is necessary; I'm not sure why, but I
-                # don't want to temp the python gods
-                def replace(cls):
-                    old = cls.__init__
+                    # This closure is necessary; I'm not sure why, but I
+                    # don't want to temp the python gods
+                    def replace(cls):
+                        old = cls.__init__
 
-                    def new_init(s, *args, **kwargs):
-                        # FIXME: This gets called twice for everything. Ha, good luck!
-                        old(s, *args, **kwargs)
-                        self.dispatch_update(s.__api_registered_base__.__name__, s)
+                        def new_init(s, *args, **kwargs):
+                            # FIXME: This gets called twice for everything. Ha, good luck!
+                            old(s, *args, **kwargs)
 
-                    cls.__init__ = new_init
-                replace(cls)
+                            self.dispatch_update(s.__api_registered_base__.__name__, s)
+
+                        cls.__init__ = new_init
+                    replace(cls)
