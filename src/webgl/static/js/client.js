@@ -524,32 +524,43 @@ ObjectCache.prototype.registerClass = function(name, readable, writable){
 
 ObjectCache.prototype.handleUpdates = function(data) {
     console.log("Got updates", data);
-    if ("updates" in data && data["updates"]) {
+    if (("updates" in data && data["updates"]) || ("fullsync" in data && data["fullsync"])) {
+	if ("fullsync" in data)
+	    console.log("==== Start Fullsync ====");
 	for (var k in data) {
 	    if (k != "updates" && data.hasOwnProperty(k)) {
 		console.log("Handling", k, "updates");
 		for (var i in data[k]) {
-		    if ("context" in data[k][i]) {
-			var hash = hashContext(data[k][i].context);
-			if (hash == 0) {
-			    hash = {bucket: k, key: 0};
+		    var killme = function(that, datas, l, j) {
+			var hash;
+			if ("context" in datas[l][j]) {
+			    hash = hashContext(datas[l][j].context);
+			    if (hash == 0) {
+				hash = {bucket: l, key: 0};
+			    }
+			} else {
+			    console.log("No context in ", datas[l][j]);
+			    console.log("Setting hash to bucket:", l, "key", 0);
+			    hash = {bucket: l, key: 0};
 			}
-			if (!(hash.bucket in this.states))
-			    this.states[hash.bucket] = {};
+			if (!(hash.bucket in that.states))
+			    that.states[hash.bucket] = {};
 
-			if (!(hash.key in this.states[hash.bucket]))
-			    this.states[hash.bucket][hash.key] = {};
-			
-			$.extend(this.states[hash.bucket][hash.key], data[k][i]);
-		    }
+			if (!(hash.key in that.states[hash.bucket]))
+			    that.states[hash.bucket][hash.key] = {};
+
+			$.extend(that.states[hash.bucket][hash.key], datas[k][i]);
+		    };
+		    killme(this, data, k, i);
 		}
 	    }
 	}
-	if ("fullsync" in data && data["fullsync"]) {
-	    console.log("Got a fullsync!");
-	    if (this.onDone) {
-		this.onDone();
-	    }
+    }
+    if ("fullsync" in data && data["fullsync"]) {
+	console.log("==== End Fullsync ====");
+	console.log("Got a fullsync!");
+	if (this.onDone) {
+	    this.onDone();
 	}
     }
 }
