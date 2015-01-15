@@ -123,9 +123,7 @@ $(function() {
         // for the server to get the update.
         var newname = $("#player-name").val();
         console.log("New player name: " + newname);
-        window.client.$Client.player.then(function(player) {
-            player.name = newname;
-        });
+        window.client.$Client.player.name = newname
 
         // Reload the player list.
         loadPlayers();
@@ -136,11 +134,8 @@ $(function() {
         // Get the universe ID from the selector, and set the player's
         // universe to it.
         var universeid = $("#universe :selected").attr("value");
-        console.log(universeid);
-        client.$Client.player.then(function(player) {
-            console.log("Setting player universe");
-            player.universe = {context: ["Universe", universeid]};
-        });
+        console.log("Setting player universe");
+        client.$Client.player.universe = {context: ["Universe", universeid]};
 
         // Show any elements that required the universe.
         $(".universe-required").show();
@@ -249,9 +244,9 @@ $(function() {
     });
 
     window.client = ScreenClient(function() {
-	loadUniverses();
+	    loadUniverses();
         loadPlayers();
-	window.client.socket.addOnMessage(handleUpdates);
-	window.client.$ClientUpdater.requestUpdates("Player", 50);
+	    window.client.socket.addOnMessage(handleUpdates);
+	    window.client.$ClientUpdater.requestUpdates("Player", 50);
     });
 });
