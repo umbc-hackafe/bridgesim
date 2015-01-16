@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block header_includes %}
+{% block header_js %}
   {% if config.DEBUG %}
     <script src="{{ url_for("static", filename="js/three/three.js") }}"></script>
     <script src="{{ url_for("static", filename="js/three/Group.js") }}"></script>
@@ -8,12 +8,18 @@
     <script src="{{ url_for("static", filename="js/three/OBJMTLLoader.js") }}"></script>
     <script src="{{ url_for("static", filename="js/three/CompressedTextureLoader.js") }}"></script>
     <script src="{{ url_for("static", filename="js/three/DDSLoader.js") }}"></script>
-    <link rel="stylesheet" href="{{ url_for("static", filename="css/common/fullwindow_canvas.css") }}" />
   {% else %}
     <script src="{{ url_for("static", filename="js/three/three.min.js") }}"></script>
+  {% endif %}
+{% endblock header_js %}
+
+{% block header_css %}
+  {% if config.DEBUG %}
+    <link rel="stylesheet" href="{{ url_for("static", filename="css/common/fullwindow_canvas.css") }}" />
+  {% else %}
     <link rel="stylesheet" href="{{ url_for("static", filename="css/common/fullwindow_canvas.min.css") }}" />
   {% endif %}
-{% endblock header_includes %}
+{% endblock header_css %}
 
 {% block body %}
   <canvas id="main-canvas"></canvas>

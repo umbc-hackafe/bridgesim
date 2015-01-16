@@ -1,15 +1,21 @@
 {% extends "base_connected.html" %}
 
-{% block header_includes %}
+{% block header_js %}
   {% if config.DEBUG %}
     {{ super() }}
     <script src="{{ url_for("static", filename="js/lobby.js") }}"></script>
-    <link rel="stylesheet" href="{{ url_for("static", filename="css/lobby.css") }}" />
   {% else %}
     <script src="{{ url_for("static", filename="js/lobby.min.js") }}"></script>
+  {% endif %}
+{% endblock header_js %}
+
+{% block header_css %}
+  {% if config.DEBUG %}
+    <link rel="stylesheet" href="{{ url_for("static", filename="css/lobby.css") }}" />
+  {% else %}
     <link rel="stylesheet" href="{{ url_for("static", filename="css/lobby.min.css") }}" />
   {% endif %}
-{% endblock header_includes %}
+{% endblock header_css %}
 
 {% block inner_body %}
   <h1>bridgesim</h1>
