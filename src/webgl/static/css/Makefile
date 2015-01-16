@@ -1,34 +1,21 @@
-CSS_TARGETS := common.min.css common.css index.min.css index.css lobby.min.css lobby.css common/fullwindow_canvas.min.css common/fullwindow_canvas.css
+LESS_TARGETS := lobby.less index.less
 
-all: $(CSS_TARGETS)
+CSS_TARGETS := $(patsubst %.less, %.css, $(LESS_TARGETS))
+MIN_CSS_TARGETS := $(patsubst %.less, %.min.css, $(LESS_TARGETS))
 
-FULLWINDOW_CANVAS_DEPS := common/fullwindow_canvas.less
-common/fullwindow_canvas.css: $(FULLWINDOW_CANVAS_DEPS)
-	lessc $(COMPILER_FLAGS) $< $@
+DEPS := $(patsubst %, %.d, $(CSS_TARGETS) $(MIN_CSS_TARGETS))
 
-common/fullwindow_canvas.min.css: $(FULLWINDOW_CANVAS_DEPS)
-	lessc $(COMPILER_FLAGS) -x $< $@
+all: $(CSS_TARGETS) $(MIN_CSS_TARGETS)
 
-COMMON_DEPS := common.less
-common.css: $(COMMON_DEPS)
-	lessc $(COMPILER_FLAGS) $< $@
+-include $(DEPS)
 
-common.min.css: $(COMMON_DEPS)
-	lessc $(COMPILER_FLAGS) -x $< $@
+%.css: %.less
+	lessc -M $< $@ > $@.d
+	lessc $< $@
 
-INDEX_DEPS := index.less common/fullwindow_canvas.less
-index.css: $(INDEX_DEPS)
-	lessc $(COMPILER_FLAGS) $< $@
-
-index.min.css: $(INDEX_DEPS)
-	lessc $(COMPILER_FLAGS) -x $< $@
-
-LOBBY_DEPS := lobby.less
-lobby.css: $(LOBBY_DEPS)
-	lessc $(COMPILER_FLAGS) $< $@
-
-lobby.min.css: $(LOBBY_DEPS)
-	lessc $(COMPILER_FLAGS) -x $< $@
+%.min.css: %.less
+	lessc -M $< $@ > $@.d
+	lessc -x $< $@
 
 clean:
-	rm $(CSS_TARGETS)
+	rm $(CSS_TARGETS) $(MIN_CSS_TARGETS) $(DEPS)
