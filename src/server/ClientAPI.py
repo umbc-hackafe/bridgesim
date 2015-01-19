@@ -139,7 +139,6 @@ def readable(*attrs):
     """
     def decorator(cls):
         attr_set = set(attrs)
-        print("Adding attrs {} to class {}".format(attrs, cls))
         if hasattr(cls, "__api_readable__"):
             attr_set |= set(cls.__api_readable__)
 
