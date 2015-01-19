@@ -338,8 +338,8 @@ Client.prototype.loadFunctions = function(map) {
 			    set: function(val) {
 				var res;
 				if (theIW) {
-                    res = theCache.set(this.context, className, theAttr,
-                            val, {});
+				    res = theCache.set(this.context, className, theAttr,
+						       val, {});
 				    proxy["__set_" + theAttr](res, {});
 				} else {
 				    res = Error(className + "." + theAttr + " is not writable");
