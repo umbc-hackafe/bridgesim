@@ -174,6 +174,7 @@ function Client(host, port, path, doneCB) {
     this.socket = null;
     this.seq = Math.floor(Math.random() * 9007199254740992);
     this.doneCB = doneCB;
+    this.listeners = {};
 
     this.reconnect = true;
     this.reconnectAttempts = 0;
@@ -341,6 +342,8 @@ Client.prototype.loadFunctions = function(map) {
 				    res = theCache.set(this.context, className, theAttr,
 						       val, {});
 				    proxy["__set_" + theAttr](res, {});
+
+				    client.__doOnChange(className, this, theAttr, val);
 				} else {
 				    res = Error(className + "." + theAttr + " is not writable");
 				}
@@ -454,6 +457,67 @@ Client.prototype.call = function(name, context, extras) {
     rf.call.apply(rf, newArgs);
 };
 
+Client.prototype.subscribe = function(clsName, attr, cb) {
+    // subscribe(clsName, cb): Any update to <clsName> instances, or new <clsName> instances.
+    // subscribe(clsName, attr, cb): Any update to <attr> on a <clsName> instance
+    // cb should have signature cb(evt)
+    // evt is {type: "update|add|new", cls: <clsName>, instance: <instance>, [attr: <attrName>, val: <val>]}
+
+
+    if (!cb) {
+	cb = attr;
+	attr = "*";
+    }
+
+    if (typeof attr == "string") {
+	attr = [attr];
+    }
+
+    if (!(clsName in this.listeners))
+	this.listeners[clsName] = {};
+
+    for (var i in attr) {
+	if (!(attr[i] in this.listeners[clsName]))
+	    this.listeners[clsName][attr[i]] = [];
+
+	this.listeners[clsName][attr[i]].push(cb);
+    }
+};
+
+Client.prototype.__doOnChange = function(clsName, instance, attr, val) {
+    if (clsName in this.listeners) {
+	for (var i in this.listeners[clsName][attr]) {
+	    this.listeners[clsName][attr][i]({type: "update", cls: clsName, instance: instance, attr: attr, val: val});
+	}
+
+	if ("*" in this.listeners[clsName]) {
+	    for (var i in this.listeners[clsName]["*"]) {
+		this.listeners[clsName]["*"][i]({type: "update", cls: clsName, instance: instance, attr: attr, val: val});
+	    }
+	}
+    }
+};
+
+Client.prototype.__doOnNew = function(clsName, instance) {
+    if (clsName in this.listeners) {
+	if ("*" in this.listeners[clsName]) {
+	    for (var i in this.listeners[clsName]["*"]) {
+		this.listeners[clsName]["*"][i]({type: "new", cls: clsName, instance: instance});
+	    }
+	}
+    }
+};
+
+Client.prototype.__doOnDelete = function(clsName, instance) {
+    if (clsName in this.listeners) {
+	if ("*" in this.listeners[clsName]) {
+	    for (var i in this.listeners[clsName]["*"]) {
+		this.listeners[clsName]["*"][i]({type: "delete", cls: clsName, instance: instance});
+	    }
+	}
+    }
+};
+
 Client.prototype.quit = function() {
     console.log("Quitting");
     this.reconnect = false;
@@ -549,30 +613,48 @@ ObjectCache.prototype.registerClass = function(name, readable, writable){
 }
 
 ObjectCache.prototype.handleUpdates = function(data) {
+    var isFullSync = ("fullsync" in data && data["fullsync"]);
     if ("updates" in data) {
 	for (var kind in data) {
 	    for (var i in data[kind]) {
-		var hash;
-		if ("context" in data[kind][i]) {
-		    hash = hashContext(data[kind][i].context)
+		if ("__deleted" in data[kind][i]) {
+		    if (!isFullSync)
+			this.client.__doOnDelete(kind, new this.client.proxyClasses[kind](data[kind][i].context));
 		} else {
-		    hash = {bucket: kind, key: 0};
-		}
+		    var hash;
+		    if ("context" in data[kind][i]) {
+			hash = hashContext(data[kind][i].context)
+		    } else {
+			hash = {bucket: kind, key: 0};
+		    }
 
-		if (!(hash.bucket in this.states)) {
-		    this.states[hash.bucket] = {};
-		}
+		    if (!(hash.bucket in this.states)) {
+			this.states[hash.bucket] = {};
+		    }
 
-		if (!(hash.key in this.states[hash.bucket])) {
-		    this.states[hash.bucket][hash.key] = data[kind][i];
-		} else {
-		    $.extend(this.states[hash.bucket][hash.key], data[kind][i]);
+		    if (!(hash.key in this.states[hash.bucket])) {
+			this.states[hash.bucket][hash.key] = data[kind][i];
+			if (!isFullSync)
+			    this.client.__doOnNew(kind, new this.client.proxyClasses[kind](data[kind][i].context));
+		    } else {
+			var cur = this.states[hash.bucket][hash.key];
+			var update = data[kind][i];
+			$.extend(this.states[hash.bucket][hash.key], data[kind][i]);
+			for (var k in update) {
+			    if (update.hasOwnProperty(k)) {
+				if (!(k in cur) || cur[k] !== update[k]) {
+				    if (!isFullSync)
+					this.client.__doOnChange(kind, new this.client.proxyClasses[kind](data[kind][i].context), k, update[k]);
+				}
+			    }
+			}
+		    }
 		}
 	    }
 	}
     }
 
-    if ("fullsync" in data && data["fullsync"]) {
+    if (isFullSync) {
 	if (this.onDone) {
 	    this.onDone();
 	}
