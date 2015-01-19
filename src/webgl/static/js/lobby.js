@@ -20,15 +20,13 @@ function loadUniverses() {
 						 universe.id).text(universe.name));
     }
 
-	if (window.client.$Client.player) {
-	    var player = window.client.$Client.player;
-	    if (player.universe) {
-		$("#universe").val(player.universe.id);
-		$("#universe").change();
-	    }
+    if (window.client.$Client.player) {
+	var player = window.client.$Client.player;
+	if (player.universe) {
+	    $("#universe").val(player.universe.id);
+	    $("#universe").change();
 	}
-    });
-
+    }
 }
 
 function loadShips(universeID) {
