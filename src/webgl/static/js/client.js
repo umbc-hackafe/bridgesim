@@ -415,6 +415,18 @@ Client.prototype.loadFunctions = function(map) {
 
 	if (isGlobal) {
 	    client['$' + className] =  new client.proxyClasses[className](null);
+	} else {
+	    var f = function(className) {
+		Object.defineProperty(client, '$_ALL_' + className, {
+		    get: function() {
+			return client.cache.all(className);
+		    },
+		    set: function(val) {
+			console.warn("Why would you even try to set Client.$_ALL_...?");
+		    }
+		});
+	    };
+	    f(className);
 	}
     }
 }
@@ -480,6 +492,16 @@ function ObjectCache(client, socket, onDone) {
     var that = this;
     this.socket.addOnMessage(function(data) {that.handleUpdates(data);});
 }
+
+ObjectCache.prototype.all = function(cls) {
+    var result = [];
+    if (cls in this.states) {
+	for (var ctx in this.states[cls]) {
+	    result.push(this.client.proxyContexts(this.states[cls][ctx]));
+	}
+    } else console.warn("ObjectCache.all: Class", cls, "not found in states. Returning empty array.");
+    return result;
+};
 
 ObjectCache.prototype.set = function(context, cls, attr, val) {
     var hash = hashContext(context);
