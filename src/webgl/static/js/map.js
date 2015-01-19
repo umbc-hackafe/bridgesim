@@ -205,16 +205,10 @@ Map.prototype.anchorTarget = function(targetid) {
 Map.prototype.autoAnchorPlayer = function() {
     var that = this;
 
-    this.client.$Client.player.then(function(player) {
-        player.ship.then(function(ship) {
-            if (ship) {
-                ship.id.then(function(id) {
-                    console.log("Anchoring map to player ship ID: " + id);
-                    that.anchorTarget(id);
-                });
-            }
-        });
-    });
+    if (this.client.$Client.player.ship) {
+        console.log("Anchoring map to player ship ID: " + id);
+	that.ancherTarget(this.client.$Client.player.ship.id);
+    }
 }
 
 // Shortcuts!
