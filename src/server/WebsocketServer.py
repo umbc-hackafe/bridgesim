@@ -128,6 +128,7 @@ class ClientHandler(WebSocket):
             data = ClientHandler.api.expand(data)
         try:
             encodeddata = json.dumps(data, cls=encoder, separators=(',',':')).encode('UTF-8')
+            print("<<< ", encodeddata)
             super().send(encodeddata)
         except Exception as e:
             print("Send Failed:")
