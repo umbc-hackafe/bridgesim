@@ -11,15 +11,14 @@ function handleUpdates(data) {
 }
 
 function loadUniverses() {
-    window.client.$Specials.universes().then(function(data) {
-	window.universes = data;
-	for (var k in window.universes) {
-	    var universe = window.universes[k];
-	    console.log("Loading universe: ", universe.name);
-            console.log("ID " + universe.id);
-            $("#universe").append($("<option>").attr("value",
-						     universe.id).text(universe.name));
-	}
+    var universes = window.client.$_ALL_Universe;
+    for (var k in universes) {
+	var universe = universes[k];
+	console.log("Loading universe: ", universe.name);
+        console.log("ID " + universe.id);
+        $("#universe").append($("<option>").attr("value",
+						 universe.id).text(universe.name));
+    }
 
 	if (window.client.$Client.player) {
 	    var player = window.client.$Client.player;
@@ -33,11 +32,12 @@ function loadUniverses() {
 }
 
 function loadShips(universeID) {
+    var universe = window.client.$_ALL_Universe[universeID];
     console.log("Loading ships from " + universeID);
-    console.log(JSON.stringify(window.universes[universeID].entities));
-    console.log("Loading ships: ", window.universes[universeID].entities);
-    for (var k in window.universes[universeID].entities) {
-        var entity = window.universes[universeID].entities[k];
+    console.log(JSON.stringify(universe.entities));
+    console.log("Loading ships: ", universe.entities);
+    for (var k in universe.entities) {
+        var entity = universe.entities[k];
         //var loadShip = function(entity) {
         if (entity.context[0] == "Ship") {
             console.log("Loading ship: " + entity.name);
@@ -58,20 +58,19 @@ function loadShips(universeID) {
 }
 
 function loadPlayers() {
-    window.client.$Specials.players().then(function(players) {
-        var playerlist = $("#lobby-players").html('<ul></ul>').find('ul');
-        for (var k in players) {
-            var player = players[k];
-            console.log(player);
-            // If the name is falsey, use a placeholder.
-	    var name = player.name;
-            if (!name) {
-                name = "Unnamed Player";
-            }
-            console.log("Listing player: " + name);
-            playerlist.append("<li>" + name + "</li>");
+    var players = window.client.$_ALL_Player;
+    var playerlist = $("#lobby-players").html('<ul></ul>').find('ul');
+    for (var k in players) {
+        var player = players[k];
+        console.log(player);
+        // If the name is falsey, use a placeholder.
+	var name = player.name;
+        if (!name) {
+            name = "Unnamed Player";
         }
-    });
+        console.log("Listing player: " + name);
+        playerlist.append("<li>" + name + "</li>");
+    }
 
     var myplayer = window.client.$Client.player;
     if(myplayer)
