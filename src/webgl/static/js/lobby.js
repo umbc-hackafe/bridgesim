@@ -12,67 +12,49 @@ function handleUpdates(data) {
 
 function loadUniverses() {
     window.client.$Specials.universes().then(function(data) {
-	    window.universes = data;
-        var waitingPromises = window.universes.length;
-	    for (k in window.universes) {
-		    var universe = window.universes[k];
-            universe.name.then(function(name) {
-		        console.log("Loading universe: ", name);
-                // TODO: use universe.id here
-                var id = universe.context[1];
-                console.log("ID " + id);
-                $("#universe").append($("<option>").attr("value",
-                            id).text(name));
+	window.universes = data;
+	for (var k in window.universes) {
+	    var universe = window.universes[k];
+	    console.log("Loading universe: ", universe.name);
+            console.log("ID " + universe.id);
+            $("#universe").append($("<option>").attr("value",
+						     universe.id).text(universe.name));
+	}
 
-                // Keep track of the number of universes that have been
-                // loaded, and if they are done, check to see if the
-                // player has one set already. If so, select that
-                // universe.
-                waitingPromises--;
-                if (waitingPromises == 0) {
-                    window.client.$Client.player.then(function(myplayer) {
-                        if(myplayer)
-                            myplayer.universe.then(function(universe) {
-                                if (universe) {
-                                    $("#universe").val(universe.context[1]);
-                                    $("#universe").change();
-                                }
-                            });
-                    });
-                }
-            });
+	if (window.client.$Client.player) {
+	    var player = window.client.$Client.player;
+	    if (player.universe) {
+		$("#universe").val(player.universe.id);
+		$("#universe").change();
 	    }
-
+	}
     });
 
 }
 
 function loadShips(universeID) {
-    window.universes[universeID].entities.then(function(entities) {
-        console.log("Loading ships from " + universeID);
-        console.log(JSON.stringify(entities));
-        for (var k in entities) {
-            var entity = entities[k];
-            //var loadShip = function(entity) {
-                if (entity.context[0] == "Ship") {
-                    entity.name.then(function(name) {
-                    console.log("Loading ship: " + name);
-                    shipOptions[name] = entity.context;
-                    $("#ship").append($("<option>").attr("value",
-                                entity.context[2]).text(name));
-                    $("#ship-name").val($("#ship :selected").text());
+    console.log("Loading ships from " + universeID);
+    console.log(JSON.stringify(window.universes[universeID].entities));
+    console.log("Loading ships: ", window.universes[universeID].entities);
+    for (var k in window.universes[universeID].entities) {
+        var entity = window.universes[universeID].entities[k];
+        //var loadShip = function(entity) {
+        if (entity.context[0] == "Ship") {
+            console.log("Loading ship: " + entity.name);
+            shipOptions[entity.name] = entity.context;
+            $("#ship").append($("<option>").attr("value",
+						 entity.id).text(entity.name));
+            $("#ship-name").val($("#ship :selected").text());
 
-                    $("#ships-waiting").append($("<div>")
-                            .addClass("ship-crew-box")
-                            .attr("id", "#ship-opt-" + name)
-                        );
+            $("#ships-waiting").append($("<div>")
+				       .addClass("ship-crew-box")
+				       .attr("id", "#ship-opt-" + entity.name)
+				      );
 
-                    });
-                }
-            //}
-            //loadShip(entity);
         }
-    });
+        //}
+        //loadShip(entity);
+    }
 }
 
 function loadPlayers() {
@@ -81,22 +63,19 @@ function loadPlayers() {
         for (var k in players) {
             var player = players[k];
             console.log(player);
-            player.name.then(function(name) {
-                // If the name is falsey, use a placeholder.
-                if (!name) {
-                    name = "Unnamed Player";
-                }
-                console.log("Listing player: " + name);
-                playerlist.append("<li>" + name + "</li>");
-            });
+            // If the name is falsey, use a placeholder.
+	    var name = player.name;
+            if (!name) {
+                name = "Unnamed Player";
+            }
+            console.log("Listing player: " + name);
+            playerlist.append("<li>" + name + "</li>");
         }
     });
-    window.client.$Client.player.then(function(myplayer) {
-        if(myplayer)
-            myplayer.name.then(function(name) {
-                $("#player-name").val(name);
-            });
-    });
+
+    var myplayer = window.client.$Client.player;
+    if(myplayer)
+        $("#player-name").val(myplayer.name);
 }
 
 $(function() {
@@ -151,11 +130,9 @@ $(function() {
         $(".ship-required").show();
         console.log(shipOptions[shipname]);
 
-        client.$Client.player.then(function(player) {
-            // TODO: When the server supports direct context parsing,
-            // send the context alone without the wrapper.
-            player.ship = {context: shipOptions[shipname]};
-        });
+        // TODO: When the server supports direct context parsing,
+        // send the context alone without the wrapper.
+        client.$Client.player.ship = {context: shipOptions[shipname]};
     });
 
     $("#ship-name").keyup(function() {
