@@ -1,19 +1,14 @@
 """Contains functionality for exposing behavior to the client.
 
+Members:
 ClientAPI -- Main class for underlying implementation of the client
-API.
-
+             API.
 BaseContext -- Base class for exposed classes using Context system.
-
 GlobalContext -- Container class for global state available to
-Contexts.
-
+                 Contexts.
 autocontext -- Class decorator for global or per-client classes.
-
 expose -- Method decorator for exposing functions.
-
 readable -- Class decorator for specifying API-readable attributes.
-
 writable -- Class decorator for specifying API-writable attributes.
 
 """
