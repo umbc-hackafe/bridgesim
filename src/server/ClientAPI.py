@@ -1,31 +1,126 @@
-# This should be subclassed within each
-# class that gets registered with the API
+"""Contains functionality for exposing behavior to the client.
+
+ClientAPI -- Main class for underlying implementation of the client
+API.
+
+BaseContext -- Base class for exposed classes using Context system.
+
+GlobalContext -- Container class for global state available to
+Contexts.
+
+autocontext -- Class decorator for global or per-client classes.
+
+expose -- Method decorator for exposing functions.
+
+readable -- Class decorator for specifying API-readable attributes.
+
+writable -- Class decorator for specifying API-writable attributes.
+
+"""
+
 class BaseContext:
+    """Base class for implementing Context serialization and
+    deserialization for a class.
+
+    Methods -- serialized, instance
+
+    This should be subclassed as a class attribute at the top level. e.g.:
+
+    class Thingy:
+        class Context(BaseContext):
+            ...
+
+    Also note that it *must* be called "Context" to be recognized by
+    the API upon registration.
+
+    """
     def __init__(self, instance=None, serial=None):
+        """Initialize a Context.
+
+        Keyword arguments:
+        instance -- a full-fledged instance of the class (not its Context)
+        serial   -- a serialized context, as defined by self.serialized()
+
+        Only one of the arguments will ever be passed to the
+        constructor at once. Whichever is passed, the constructor
+        should extract the necessary information from it and generally
+        save it.
+
+        """
         pass
 
     def serialized(self):
+        """Return a serialized representation of the Context as a tuple.
+
+        Conventially, the first element in this tuple is the name of
+        the class for which this Context is defined. The remaining
+        elements are any necessary information (usually IDs) needed to
+        retrieve the original instance from a GlobalContext. The
+        result of this method is what will be passed as the "serial"
+        argument to the constructor.
+
+        """
         return ()
 
     def instance(self, global_context):
+        """Return the instance of the parent class corresponding to this
+        Context instance.
+
+        Arguments:
+        global_context -- A GlobalContext instance which may be used
+        to locate the corresponding instance for this Context.
+
+        """
         return None
 
-# This is actually very different from a context.
-# Meh. It just holds the things we need it to.
 class GlobalContext:
+    """A container for global state which is needed by subclasses of
+    BaseContext in order to locate their corresponding instances.
+
+    Attributes:
+    universes -- A list of all universes in the game.
+    network   -- The NetworkServer instance.
+
+    """
     def __init__(self, universes, network):
         self.universes = universes
         self.network = network
 
 def autocontext(getter):
+    """A class decorator which marks the class as having an instance which
+    can be inferred just from the Client requesting it.
+
+    Argument: A function which accepts the Client attempting to
+    resolve an instance and a GlobalContext instance, and returns the
+    corresponding instance.
+
+    For example, the Client itself uses this decorator as such:
+
+    @autocontext(lambda client, global_context: client)
+    class Client:
+        ...
+
+    """
     def decorator(cls):
         if not hasattr(cls, "__api_auto__"):
             setattr(cls, "__api_auto__", getter)
         return cls
     return decorator
 
-# ** Function Decorator **
 def expose(func=None, label=None, client=False):
+    """A function decorator which exposes the target to the API.
+
+    Arguments:
+    func -- The function to be decorated
+
+    Keyword arguments:
+    label  -- The name under which to expose this function, if
+              different from its real name.
+    client -- If True, the function will receive a keyword argument
+              "client" corresponding to the client which initiated
+              the function call.
+
+    """
     if func != None:
         if not label:
             label = func.__name__
@@ -47,6 +142,13 @@ def updates(*attrs):
     return decorator
 
 def readable(*attrs):
+    """A class decorator which exposes the given attributes of the target
+    to the API in read-only mode.
+
+    Arguments:
+    *attrs -- Varargs, where each is the name of an attribute.
+
+    """
     def decorator(cls):
         attr_set = set(attrs)
         print("Adding attrs {} to class {}".format(attrs, cls))
@@ -59,6 +161,16 @@ def readable(*attrs):
     return decorator
 
 def writable(*attrs):
+    """A class decorator which exposes the given attributes of the target
+    to the API in read-write mode.
+
+    Arguments:
+    *attrs -- Vararsg, where each is the name of an attribute.
+
+    This decorator will implicitly apply @readable, so it is not
+    necessary to do so manually.
+
+    """
     def decorator(cls):
         attr_set = set(attrs)
         if hasattr(cls, "__api_writable__"):
@@ -89,13 +201,58 @@ def writable(*attrs):
 # a tuple that uniquely identifies the context within
 # the global context.
 class ClientAPI:
+    """Class for handling registration of classes for exposure in the API,
+    providing standard access methods for clients, and coordinating
+    state updates for instances of registered classes.
+
+    Attributes:
+    classes   -- A dictionary for storing information for each class.
+    instances -- A dictionary of {<type>: [ <instances>,] } for every
+                 class registered with the API.
+
+    Methods:
+    onGet, onSet, onCall -- Resolve a context and perform an
+                            operation on its instance.
+    get                  -- Resolve a context to its instance.
+    getTable             -- Return a dictionary of class names to
+                            their methods and attributes.
+    resend_updates       -- Resend all updates to a listener.
+    update_[un]subscribe -- [Un]subscribe a listener for updates.
+    resolve_contexts     -- Deserialize contexts in a primitive.
+    expand               -- Expand a registered object into its
+                            context and readable attributes.
+    register             -- Register a class with the API.
+
+    """
     def __init__(self, globalContext):
+        """Initialize a ClientAPI object.
+
+        Arguments:
+        globalContext -- An instance of GlobalContext that will be used
+                         for deserializing contexts.
+
+        """
         self.classes = {}
         self.globalContext = globalContext
         self.update_listeners = []
         self.instances = {}
 
     def onGet(self, name, ctx, client=None):
+        """Deserialize a class from a context and return one of its attributes
+        in the form {"result": <value>}.
+
+        Arguments:
+        name -- The class name and attribute name, separated by a dot (e.g.,
+                "SomeClass.some_attr").
+        ctx  -- A serialized context for the instance whose attribute is to
+                be retrieved.
+
+        This method will raise an AttributeError if the named
+        attribute has not been marked readable. If the attribute has
+        been marked readable, but is not present in the resolved
+        instance, {"result": None} will be returned.
+
+        """
         cls, attr = name.split(".")
         classInfo = self.classes[cls]
 
@@ -108,6 +265,20 @@ class ClientAPI:
         return {"result": result}
 
     def onSet(self, name, ctx, value, client=None):
+        """Deserialize a class from a context and set one of its attributes,
+        and return the new value in the form {"result": <value>}.
+
+        Arguments:
+        name  -- The class name and attribute name, separated by a dot (e.g.
+                "SomeClass.some_attr").
+        ctx   -- A serialized context for the instance whose attribute is to
+                be set.
+        value -- The new value for the specified attribute.
+
+        This method will raise an AttributeError if the named
+        attribute has not been marked writable.
+
+        """
         cls, attr = name.split(".")
         classInfo = self.classes[cls]
 
@@ -126,6 +297,24 @@ class ClientAPI:
         return {"result": result}
 
     def onCall(self, name, ctx, *args, client=None, **kwargs):
+        """Deserialize a class from a context and call one of its methods, and
+        return the result in the form {"result": <value>}.
+
+        Arguments:
+        name  -- The class name and attribute name, separated by a dot (e.g.
+                "SomeClass.some_attr").
+        ctx   -- A serialized context for the instance whose attribute is to
+                be set.
+        *args -- Varargs, to be directly passed to the specified function.
+
+        Keyword arguments:
+        **kwargs -- Keyword arguments, to be directly passed to the
+                    specified function.
+
+        This method will raise an AttributeError if the named method
+        has not been exposed.
+
+        """
         cls, func = name.split(".")
         classInfo = self.classes[cls]
         if func not in classInfo["methods"]:
@@ -141,6 +330,17 @@ class ClientAPI:
         return {"result": result}
 
     def get(self, ctx, cls=None, client=None):
+        """Deserialize an arbitrary context.
+
+        Arguments:
+        ctx -- The context to deserialize.
+
+        cls -- The name of the class to which the context will
+               deserialize. If this is not given, it will be inferred
+               from the context. It must be explicitly provided if the
+               class uses the autocontext decorator.
+
+        """
         if not cls:
             cls = ctx[0]
         classInfo = self.classes[cls]
@@ -154,18 +354,63 @@ class ClientAPI:
         return instance
 
     def getTable(self):
+        """Return a dictionary with API-related information for each
+        registered class.
+
+        Example result:
+        {
+          "SomeClass": {
+            "class": <class 'SomeClass'>,
+            "context": <class 'SomeClass.Context'>,
+            "methods": {
+              "foo": {"callable" <function 'foo'>},
+              "bar": {"callable": <function 'bar'>},
+              "blah_client": {
+                "callable": <function 'blah_client'>,
+                "pass_client": True
+              }
+            },
+            "readable": ["id", "kind", "name"],
+            "writable": ["name"],
+          },
+          ...
+        }
+
+        """
         return self.classes
 
     def resend_updates(self, listener):
+        """Send a listener all "base" updates, to ensure it has sufficiently
+        up-to-date state.
+
+        Arguments:
+        listener -- A function to receive the updates, as described in
+                    update_subscribe.
+
+        """
         for kind, obj_set in list(self.instances.items()):
             for obj in set(obj_set):
                 listener(kind, obj)
 
     def update_subscribe(self, listener):
+        """Subscribe a listener function to all future state updates in all
+        registered classes and send it the "base" updates.
+
+        Arguments:
+        listener -- A function to receive updates. It must accept two
+                    arguments, where the first is the name of the
+                    class of the updated object, and the second is the
+                    object itself.
+
+        """
         self.update_listeners.append(listener)
         self.resend_updates(listener)
 
     def update_unsubscribe(self, listener):
+        """Unsubscribe a listener from all future state updates.
+
+        """
+
         if listener in self.update_listeners:
             self.update_listeners.remove(listener)
 
@@ -178,10 +423,10 @@ class ClientAPI:
             l(kind, obj)
 
     def resolve_contexts(self, obj, client=None):
-        """
-        Accepts an object and attempts to convert any serialized contexts
-        it contains, of the form {"context": ["Type", 1, ...]}, into their
-        corresponding instances.
+        """Accept an object and attempt to convert any serialized contexts it
+        contains, of the form {"context": ["Type", 1, ...]}, into
+        their corresponding instances.
+
         """
 
         if not obj:
@@ -211,11 +456,10 @@ class ClientAPI:
         return obj
 
     def expand(self, obj):
-        """
-        Expands an object to expose all its top-level attributes, leaving
-        primitives as is and turning Context-having objects into their
-        context's primitive (e.g., ["Entity",1,0)]). This prevents
-        having recursive objects.
+        """Expand an object to expose its top-level attributes, leaving
+        primitives as is and replacing objects with context with their
+        serialized context (e.g., ["Entity",1,0)]).
+
         """
 
         if hasattr(obj, "__api_readable__"):
@@ -239,6 +483,18 @@ class ClientAPI:
         return None
 
     def register(self, cls):
+        """Register a class with the API.
+
+        This function performs a large number of modifications to the
+        given class.  Most significantly, it will wrap the __setattr__
+        and __init__ methods, in order to provide automatic detection
+        of updates to its attributes.  Because of this, register must
+        be called on a superclass before being called on any of its
+        subclasses. This does not apply if the superclass has no API
+        exposure and would not otherwise be registered, of course.
+
+        """
+
         if hasattr(cls, "__api_auto__"):
             context = cls.__api_auto__
         else:
