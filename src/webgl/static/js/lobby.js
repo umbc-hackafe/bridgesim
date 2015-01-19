@@ -4,9 +4,9 @@ var shipOptions = {};
 function handleUpdates(data) {
     if ("updates" in data && data["updates"]) {
         console.log("Got update");
-	    if ("Player" in data) {
+	if ("Player" in data) {
             loadPlayers();
-	    }
+	}
     }
 }
 
@@ -221,9 +221,9 @@ $(function() {
     });
 
     window.client = ScreenClient(function() {
-	    loadUniverses();
+	loadUniverses();
         loadPlayers();
-	    window.client.socket.addOnMessage(handleUpdates);
-	    window.client.$ClientUpdater.requestUpdates("Player", 50);
+	window.client.socket.addOnMessage(handleUpdates);
+	window.client.$ClientUpdater.requestUpdates("Player", 50);
     });
 });
