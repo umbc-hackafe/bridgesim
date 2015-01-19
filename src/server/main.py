@@ -50,6 +50,7 @@ api.register(Client.Player)
 universe = Universe.Universe(size)
 universe.id = 0
 api.globalContext.universes = [universe]
+network.set_universe(universe)
 
 print("PLAYER", dir(Client.Player))
 print("---")

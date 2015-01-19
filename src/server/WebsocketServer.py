@@ -153,13 +153,17 @@ class ClientHandler(WebSocket):
             #print("Receive Failed")
  
 class NetworkServer:
-    def __init__(self, config, universe):
+    def __init__(self, config, universe=None):
         self.__dict__.update(config)
         self.universe = universe
         self.store = SharedClientDataStore(self)
-        ClientHandler.universe = universe
-        ClientHandler.store = self.store
         self.clients = ClientHandler.clients
+        if universe:
+            self.set_universe(universe)
+
+    def set_universe(self, universe):
+        self.universe = universe
+        ClientHandler.universe = universe
 
     def stop(self):
         for client in self.clients.values():
