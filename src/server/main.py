@@ -31,12 +31,8 @@ if "-v" in sys.argv:
   SCALEFACTOR = 640/width
   screen = pygame.display.set_mode((int(width*SCALEFACTOR), int(height*SCALEFACTOR)))
 
-universe = Universe.Universe(size)
-universe.id = 0
-
-network = NetworkServer.NetworkServer({}, universe)
-
-api = ClientAPI.ClientAPI(ClientAPI.GlobalContext([universe], network))
+network = NetworkServer.NetworkServer({}, None)
+api = ClientAPI.ClientAPI(ClientAPI.GlobalContext([], network))
 
 # Register ALL the classes!
 api.register(Universe.Universe)
@@ -50,6 +46,10 @@ api.register(SharedClientDataStore.SharedClientDataStore)
 api.register(Client.ClientUpdater)
 api.register(Client.Client)
 api.register(Client.Player)
+
+universe = Universe.Universe(size)
+universe.id = 0
+api.globalContext.universes = [universe]
 
 print("PLAYER", dir(Client.Player))
 print("---")
@@ -74,8 +74,6 @@ table = api.getTable()
 #      else:
 #        print("  * {} (r-)".format(attrName))
 
-network.start(api)
-
 ship1 = Ship.Ship(shipConf, universe)
 ship1.name = "Aggressor"
 ship2 = Ship.Ship(shipConf, universe)
@@ -93,6 +91,8 @@ ship3.velocity = physics.Vector(200,-20,5)
 universe.add(ship1)
 universe.add(ship2)
 universe.add(ship3)
+
+network.start(api)
 
 if "-v" in sys.argv:
   screen.fill((255,255,255))
