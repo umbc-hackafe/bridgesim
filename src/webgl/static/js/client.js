@@ -510,11 +510,14 @@ ObjectCache.prototype.get = function(context, cls, attr) {
 	if ((hash.key) in this.states[hash.bucket]) {
 	    if (attr in this.states[hash.bucket][hash.key]) {
 		return this.client.proxyContexts(this.states[hash.bucket][hash.key][attr]);
-	    }
-	}
-    }
+	    } else console.warn("Cache object", this.states[hash.bucket][hash.key], "has no attr named", attr);
+	} else console.warn("Cache bucket", this.states[hash.bucket], "has no object for context", hash.key);
+    } else console.warn("Cache", this.states, "has no bucket for type", hash.bucket);
 
-    console.warn("Did not find specified key", attr, "in context", context, "(cls=", cls, ")");
+    console.error("Did not find specified key", attr, "in context", context, "(cls=", cls, ")");
+    if (hash.bucket in this.states && hash.key in this.states[hash.bucket]) {
+	console.info("The object's cache is", this.states[hash.bucket][hash.key]);
+    }
     return null;
 }
 
