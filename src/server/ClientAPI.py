@@ -174,6 +174,152 @@ def writable(*attrs):
         return readable(*attrs)(cls)
     return decorator
 
+class ListWrapper:
+    mutators = {"append", "clear", "extend", "insert", "pop", "remove", "sort"}
+    __hash__ = None
+
+    def __init__(self, api, cls, instance, attr, base=None):
+        self.api = api
+        self.cls = cls
+        self.instance = instance
+        self.attr = attr
+
+        if base is None:
+            self.base = []
+        else:
+            self.base = base
+
+    def __updated(self):
+        if api:
+            api.dispatch_update(self.cls, self.instance)
+
+    def __class__(self):
+        return self.base.__class__()
+
+    def __eq__(self, other):
+        return self.base == other
+
+    def __ge__(self, other):
+        return self.base >= other
+
+    def __gt__(self, other):
+        return self.base > other
+
+    def __le__(self, other):
+        return self.base <= other
+
+    def __lt__(self, other):
+        return self.base < other
+
+    def __ne__(self, other):
+        return self.base != other
+
+    def __len__(self):
+        return len(self.base)
+
+    def __getitem__(self, key):
+        return self.base[key]
+
+    def __iter__(self):
+        return iter(self.base)
+
+    def __reversed__(self):
+        return reversed(self.base)
+
+    def __setitem__(self, key, value):
+        old = self.base[key]
+        self.base[key] = value
+        if value != old:
+            self.__updated()
+
+    def __delitem__(self, key):
+        del self.base[key]
+        self.__updated()
+
+    def __str__(self):
+        return str(self.base)
+
+    def __repr__(self):
+        return repr(self.base)
+
+    def __getattr__(self, attr):
+        if attr in ListWrapper.mutators:
+            # Caveat: This will work even if the "mutator"
+            # is not called... so, `a = list.append` will
+            # still cause an update. I'm just so lazy...
+            self.__updated()
+        return getattr(self.base, attr)
+
+class DictWrapper:
+    mutators = {"clear", "pop", "popitem", "setdefault"}
+    __hash__ = None
+
+    def __init__(self, api, cls, instance, attr, base=None):
+        self.api = api
+        self.cls = cls
+        self.instance = instance
+        self.attr = attr
+
+        if base is None:
+            self.base = []
+        else:
+            self.base = base
+
+    def __updated(self):
+        if api:
+            api.dispatch_update(self.cls, self.instance)
+
+    def __eq__(self, other):
+        return self.base == other
+
+    def __ge__(self, other):
+        return self.base >= other
+
+    def __gt__(self, other):
+        return self.base > other
+
+    def __le__(self, other):
+        return self.base <= other
+
+    def __lt__(self, other):
+        return self.base < other
+
+    def __ne__(self, other):
+        return self.base != other
+
+    def __len__(self):
+        return len(self.base)
+
+    def __getitem__(self, key):
+        return self.base[key]
+
+    def __iter__(self):
+        return iter(self.base)
+
+    def __setitem__(self, key, value):
+        old = self.base[key]
+        self.base[key] = value
+        if value != old:
+            self.__updated()
+
+    def __delitem__(self, key):
+        del self.base[key]
+        self.__updated()
+
+    def __str__(self):
+        return str(self.base)
+
+    def __repr__(self):
+        return repr(self.base)
+
+    def __getattr__(self, attr):
+        if attr in DictWrapper.mutators:
+            # Caveat: This will work even if the "mutator"
+            # is not called... so, `a = list.append` will
+            # still cause an update. But it's so much easier
+            self.__updated()
+        return getattr(self.base, attr)
+
 # There are two parts to this:
 #
 # One is a decorator which, applied to a function,
@@ -541,6 +687,12 @@ class ClientAPI:
                 # maybe on the network thread
                 if name != "__setattr__" and name in s.__api_readable__ and (not hasattr(s, name) or getattr(s, name) != value):
                     self.dispatch_update(cls.__name__, s)
+
+                if type(value) is list:
+                    value = ListWrapper(self, cls, s, name, base=value)
+
+                if type(value) is dict:
+                    value = DictWrapper(self, cls, s, name, base=value)
 
                 return self.classes[cls.__name__]["__old_setattr__"](s, name, value)
             cls.__setattr__ = new_setattr
