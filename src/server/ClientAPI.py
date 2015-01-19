@@ -134,13 +134,6 @@ def expose(func=None, label=None, client=False):
             return expose(func, label=label, client=client)
         return partial
 
-def updates(*attrs):
-    def decorator(func):
-        print("{} may have been updated".format(",".join(attrs)))
-        return func
-
-    return decorator
-
 def readable(*attrs):
     """A class decorator which exposes the given attributes of the target
     to the API in read-only mode.
