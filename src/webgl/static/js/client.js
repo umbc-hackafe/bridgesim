@@ -522,7 +522,8 @@ ObjectCache.prototype.get = function(context, cls, attr) {
 }
 
 ObjectCache.prototype.registerClass = function(name, readable, writable){ 
-    this.states[name] = {};
+    if (!(name in this.states))
+	this.states[name] = {};
 }
 
 ObjectCache.prototype.handleUpdates = function(data) {
