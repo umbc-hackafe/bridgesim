@@ -418,7 +418,7 @@ Client.prototype.loadFunctions = function(map) {
 
 	if (isGlobal) {
 	    client['$' + className] =  new client.proxyClasses[className](null);
-	} else {
+	} else if (!client.hasOwnProperty("$_ALL_" + className)) {
 	    var f = function(className) {
 		Object.defineProperty(client, '$_ALL_' + className, {
 		    get: function() {
