@@ -1,4 +1,5 @@
 import sys
+import ClientAPI
 from Client import Client, ClientUpdater
 from SharedClientDataStore import SharedClientDataStore
 import threading
@@ -54,19 +55,23 @@ class Root():
         # you can access the class instance through
         handler = cherrypy.request.ws_handler
 
-class VectorEncoder(json.JSONEncoder):
+class SpecialEncoder(json.JSONEncoder):
     def default(self, obj):
         if isinstance(obj, physics.Vector):
             return list(obj.dimensions)
+        elif isinstance(obj, ClientAPI.ListWrapper):
+            return obj.base
+        elif isinstance(obj, ClientAPI.DictWrapper):
+            return {str(k): v for k, v in obj.base.items()}
         return json.JSONEncoder.default(self, obj)
 
-class ContextEncoder(VectorEncoder):
+class ContextEncoder(SpecialEncoder):
     def default(self, obj):
         if hasattr(obj, 'Context'):
             return {"context": list(obj.Context(instance=obj).serialized())}
         elif hasattr(obj, '__api_auto__'):
             return {"context": [type(obj).__name__]}
-        return VectorEncoder.default(self, obj)
+        return SpecialEncoder.default(self, obj)
 
 class ExpansionEncoder(ContextEncoder):
     def __init__(self, *args, **kwargs):
