@@ -185,7 +185,7 @@ class ListWrapper:
 
     def __updated(self):
         if self.api:
-            self.api.dispatch_update(self.cls, self.instance)
+            self.api.dispatch_update(self.cls.__name__, self.instance)
 
     def __class__(self):
         return self.base.__class__()
@@ -261,7 +261,7 @@ class DictWrapper:
 
     def __updated(self):
         if self.api:
-            self.api.dispatch_update(self.cls, self.instance)
+            self.api.dispatch_update(self.cls.__name__, self.instance)
 
     def __eq__(self, other):
         return self.base == other
