@@ -354,6 +354,19 @@ Client.prototype.loadFunctions = function(map) {
 		    aNewFunction(this, attr, isWritable, cache);
 		}
 	    };
+
+	    client.proxyClasses[className].prototype.dump = function() {
+		var result = {};
+		for (var k in readable) {
+		    var thing = this[readable[k]];
+		    if (thing && thing.dump) {
+			result[readable[k]] = thing.dump();
+		    } else {
+			result[readable[k]] = thing;
+		    }
+		}
+		return result;
+	    };
 	};
 	// I assure you this name is quite appropriate
 	fffffffuuuuuuuuuuuu(className, readable, writable, this.cache);
