@@ -184,8 +184,8 @@ class ListWrapper:
             self.base = base
 
     def __updated(self):
-        if api:
-            api.dispatch_update(self.cls, self.instance)
+        if self.api:
+            self.api.dispatch_update(self.cls, self.instance)
 
     def __class__(self):
         return self.base.__class__()
@@ -221,7 +221,7 @@ class ListWrapper:
         return reversed(self.base)
 
     def __setitem__(self, key, value):
-        old = self.base[key]
+        old = self.base[key] if key in self.base else None
         self.base[key] = value
         if value != old:
             self.__updated()
@@ -260,8 +260,8 @@ class DictWrapper:
             self.base = base
 
     def __updated(self):
-        if api:
-            api.dispatch_update(self.cls, self.instance)
+        if self.api:
+            self.api.dispatch_update(self.cls, self.instance)
 
     def __eq__(self, other):
         return self.base == other
@@ -291,7 +291,7 @@ class DictWrapper:
         return iter(self.base)
 
     def __setitem__(self, key, value):
-        old = self.base[key]
+        old = self.base[key] if key in self.base else None
         self.base[key] = value
         if value != old:
             self.__updated()
