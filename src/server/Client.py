@@ -171,6 +171,19 @@ class ClientUpdater:
     def onUpdate(self, kind, obj):
         if kind not in self.updates:
             self.updates[kind] = set()
+
+        # Sort-of temporary hack because when we send full-syncs,
+        # every "global" (per-client) object gets sent, but the client
+        # can't differentiate them because they have no context. So,
+        # we just don't send them if they don't concern them.  This
+        # will be fixed when the Context system gets replaced with
+        # some sort of automatic identification system.
+        if type(obj) is Client and obj is not self.client:
+            return
+
+        if type(obj) is ClientUpdater and obj is not self:
+            return
+
         self.updates[kind].add(obj)
 
     def sendUpdates(self, kinds, fullsync=False):
